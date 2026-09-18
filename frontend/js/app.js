@@ -1,27 +1,38 @@
-// Co-working Space Booking System - Frontend Application Logic
+// CoWorkSphere - Enterprise Frontend Logic & Oracle Integration
 const API_BASE = '/api';
 
-// State Cache
+// Application State
 let state = {
   spaces: [],
   plans: [],
   rooms: [],
   members: [],
   bookings: [],
-  payments: []
+  payments: [],
+  activeCategoryFilter: 'ALL',
+  selectedTimelineRoomId: null,
+  timelineDate: new Date().toISOString().split('T')[0],
+  selectedStartHour: null,
+  selectedEndHour: null,
+  checkoutData: null,
+  appliedPromo: null,
+  selectedPaymentMethod: 'UPI'
 };
 
-// Toast Notification
+// ====================================================================
+// TOAST NOTIFICATIONS & TAB NAVIGATION
+// ====================================================================
+
 function showToast(message, type = 'success') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   const bgColor = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-sky-600');
   const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info');
 
-  toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm transition-all transform duration-300 translate-y-2 opacity-0 pointer-events-auto`;
+  toast.className = `${bgColor} text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs transition-all transform duration-300 translate-y-2 opacity-0 pointer-events-auto border border-white/10`;
   toast.innerHTML = `
-    <i class="fa-solid ${icon} text-lg"></i>
-    <div class="flex-1 font-medium">${message}</div>
+    <i class="fa-solid ${icon} text-base"></i>
+    <div class="flex-1 font-semibold">${message}</div>
     <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
   `;
 
@@ -36,7 +47,6 @@ function showToast(message, type = 'success') {
   }, 4000);
 }
 
-// Tab Switching
 function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
@@ -46,9 +56,13 @@ function switchTab(tabId) {
 
   if (targetSection) targetSection.classList.remove('hidden');
   if (targetBtn) targetBtn.classList.add('active');
+
+  // If switching to timeline, ensure grid is rendered
+  if (tabId === 'timeline') {
+    renderTimelineGrid();
+  }
 }
 
-// Modal Helpers
 function openModal(id) {
   document.getElementById(id).classList.remove('hidden');
 }
@@ -58,7 +72,7 @@ function closeModal(id) {
 }
 
 // ====================================================================
-// DATA LOADING & RENDERING
+// DATA INITIALIZATION & SYNC
 // ====================================================================
 
 async function refreshAllData() {
@@ -71,6 +85,9 @@ async function refreshAllData() {
     loadBookings(),
     loadPayments()
   ]);
+  renderDashboard();
+  renderCatalog();
+  renderTimelineGrid();
 }
 
 async function loadStats() {
@@ -80,7 +97,7 @@ async function loadStats() {
     if (data.success) {
       document.getElementById('stat-spaces').textContent = data.stats.totalSpaces;
       document.getElementById('stat-rooms').textContent = data.stats.availableRooms;
-      document.getElementById('stat-members').textContent = data.stats.totalMembers;
+      document.getElementById('stat-bookings').textContent = data.stats.activeBookings;
       document.getElementById('stat-revenue').textContent = `₹ ${Number(data.stats.totalRevenue).toLocaleString()}`;
     }
   } catch (err) {
@@ -124,63 +141,613 @@ async function loadPlans() {
   }
 }
 
-// ----------------- ROOMS CRUD -----------------
 async function loadRooms() {
   try {
     const res = await fetch(`${API_BASE}/rooms`);
     const data = await res.json();
     if (data.success) {
       state.rooms = data.data;
-      renderRoomsTable(state.rooms);
-      populateBookingRoomsSelect(state.rooms);
+      if (!state.selectedTimelineRoomId && state.rooms.length > 0) {
+        state.selectedTimelineRoomId = state.rooms[0].ROOM_ID;
+      }
+      populateTimelineRoomDropdown();
     }
   } catch (err) {
     console.error('Failed to load rooms:', err);
   }
 }
 
-function renderRoomsTable(rooms) {
-  const tbody = document.getElementById('rooms-table-body');
-  if (!rooms || rooms.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">No rooms found in database.</td></tr>`;
+async function loadMembers() {
+  try {
+    const res = await fetch(`${API_BASE}/members`);
+    const data = await res.json();
+    if (data.success) {
+      state.members = data.data;
+      renderMembersTable(state.members);
+    }
+  } catch (err) {
+    console.error('Failed to load members:', err);
+  }
+}
+
+async function loadBookings() {
+  try {
+    const res = await fetch(`${API_BASE}/bookings`);
+    const data = await res.json();
+    if (data.success) {
+      state.bookings = data.data;
+      renderDashboardBookings();
+    }
+  } catch (err) {
+    console.error('Failed to load bookings:', err);
+  }
+}
+
+async function loadPayments() {
+  try {
+    const res = await fetch(`${API_BASE}/payments`);
+    const data = await res.json();
+    if (data.success) {
+      state.payments = data.data;
+      renderPaymentsTable(state.payments);
+    }
+  } catch (err) {
+    console.error('Failed to load payments:', err);
+  }
+}
+
+// ====================================================================
+// VIEW 1: DASHBOARD ACTIVE RESERVATIONS & QUICK FILTER
+// ====================================================================
+
+function renderDashboard() {
+  renderDashboardBookings();
+  const quickDate = document.getElementById('quick-date');
+  if (quickDate && !quickDate.value) {
+    quickDate.value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function renderDashboardBookings() {
+  const container = document.getElementById('dashboard-bookings-list');
+  if (!container) return;
+
+  const activeBookings = (state.bookings || []).filter(b => b.STATUS === 'CONFIRMED').slice(0, 5);
+
+  if (activeBookings.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-slate-500 text-xs">
+        <i class="fa-solid fa-calendar-xmark text-2xl text-slate-600 block mb-2"></i>
+        No active reservations found. Click "Book a Time Slot" to lock a room!
+      </div>
+    `;
     return;
   }
 
-  tbody.innerHTML = rooms.map(r => {
-    const statusColor = r.STATUS === 'AVAILABLE' 
-      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-      : (r.STATUS === 'OCCUPIED' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20');
+  container.innerHTML = activeBookings.map(b => `
+    <div class="p-4 rounded-2xl bg-dark-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-700 transition">
+      <div class="flex items-start gap-3.5">
+        <div class="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-door-open"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h4 class="font-bold text-white text-sm">${b.ROOM_NAME}</h4>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CONFIRMED</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">${b.SPACE_NAME} • Reserved by <span class="text-slate-300 font-medium">${b.MEMBER_NAME}</span></p>
+          <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1 font-mono">
+            <span class="text-slate-300"><i class="fa-regular fa-calendar text-[10px] mr-1 text-slate-500"></i>${b.BOOKING_DATE}</span>
+            <span class="text-amber-400 font-bold"><i class="fa-regular fa-clock text-[10px] mr-1"></i>${b.START_TIME} - ${b.END_TIME}</span>
+            <span class="text-emerald-400 font-bold">₹${Number(b.TOTAL_AMOUNT).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-end sm:self-center">
+        <button onclick="cancelBooking(${b.BOOKING_ID})" class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold border border-rose-500/30 transition">
+          <i class="fa-solid fa-ban text-[10px] mr-1"></i> Cancel
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function handleQuickFilter(e) {
+  e.preventDefault();
+  const hub = document.getElementById('quick-hub').value;
+  const type = document.getElementById('quick-type').value;
+  const date = document.getElementById('quick-date').value;
+
+  if (date) {
+    state.timelineDate = date;
+    const dp = document.getElementById('timeline-date-picker');
+    if (dp) dp.value = date;
+  }
+
+  // Switch to catalog or timeline
+  if (type) state.activeCategoryFilter = type;
+  if (hub) {
+    const hubFilter = document.getElementById('filter-hub');
+    if (hubFilter) hubFilter.value = hub;
+  }
+
+  switchTab('catalog');
+  renderCatalog();
+}
+
+// ====================================================================
+// VIEW 2: SPACE CATALOG & 2D FLOOR PLAN
+// ====================================================================
+
+function toggleCatalogView(viewType) {
+  const grid = document.getElementById('catalog-grid-view');
+  const map = document.getElementById('catalog-map-view');
+  const btnGrid = document.getElementById('view-btn-grid');
+  const btnMap = document.getElementById('view-btn-map');
+
+  if (viewType === 'map') {
+    grid.classList.add('hidden');
+    map.classList.remove('hidden');
+    btnMap.classList.add('bg-sky-600', 'text-white');
+    btnMap.classList.remove('text-slate-400');
+    btnGrid.classList.remove('bg-sky-600', 'text-white');
+    btnGrid.classList.add('text-slate-400');
+  } else {
+    map.classList.add('hidden');
+    grid.classList.remove('hidden');
+    btnGrid.classList.add('bg-sky-600', 'text-white');
+    btnGrid.classList.remove('text-slate-400');
+    btnMap.classList.remove('bg-sky-600', 'text-white');
+    btnMap.classList.add('text-slate-400');
+  }
+}
+
+function filterRoomsByType(type) {
+  state.activeCategoryFilter = type;
+  document.querySelectorAll('.room-pill').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent.includes(type) || (type === 'ALL' && btn.textContent.includes('All Spaces'))) {
+      btn.classList.add('active');
+    }
+  });
+  renderCatalog();
+}
+
+function applyRoomFilters() {
+  renderCatalog();
+}
+
+function renderCatalog() {
+  const container = document.getElementById('rooms-catalog-cards');
+  if (!container) return;
+
+  const hubFilter = document.getElementById('filter-hub')?.value || 'ALL';
+  const capacityFilter = Number(document.getElementById('filter-capacity')?.value || 0);
+  const checkedAmenities = Array.from(document.querySelectorAll('.amenity-checkbox:checked')).map(c => c.value.toLowerCase());
+
+  const filtered = state.rooms.filter(room => {
+    // Type Filter
+    if (state.activeCategoryFilter !== 'ALL' && room.ROOM_TYPE !== state.activeCategoryFilter) {
+      return false;
+    }
+    // Hub Filter
+    if (hubFilter !== 'ALL' && !room.SPACE_NAME.toLowerCase().includes(hubFilter.toLowerCase())) {
+      return false;
+    }
+    // Capacity Filter
+    if (capacityFilter > 0 && Number(room.CAPACITY) < capacityFilter) {
+      return false;
+    }
+    // Amenity Filter
+    if (checkedAmenities.length > 0) {
+      const roomFacs = (room.FACILITIES || []).join(' ').toLowerCase();
+      const matchesAll = checkedAmenities.every(a => roomFacs.includes(a));
+      if (!matchesAll) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full text-center py-16 bg-dark-900 border border-slate-800 rounded-3xl">
+        <i class="fa-solid fa-filter-circle-xmark text-4xl text-slate-600 mb-3 block"></i>
+        <h4 class="font-bold text-white text-base">No spaces match your filters</h4>
+        <p class="text-xs text-slate-400 mt-1">Try relaxing your hub or capacity filters to explore more options.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(room => {
+    const facilitiesList = (room.FACILITIES && room.FACILITIES.length > 0)
+      ? room.FACILITIES.slice(0, 3)
+      : ['High-Speed Wi-Fi', 'Power Outlets', 'Ergonomic Seating'];
 
     return `
-      <tr class="hover:bg-slate-800/40 transition">
-        <td class="px-6 py-4 font-mono text-xs text-sky-400">#${r.ROOM_ID}</td>
-        <td class="px-6 py-4 font-semibold text-white">${r.ROOM_NAME}</td>
-        <td class="px-6 py-4 text-slate-400">${r.SPACE_NAME || 'Main Space'} <span class="text-xs text-slate-500">(${r.CITY || 'Chennai'})</span></td>
-        <td class="px-6 py-4 text-slate-300">${r.ROOM_TYPE}</td>
-        <td class="px-6 py-4 text-slate-300"><i class="fa-solid fa-users text-xs mr-1 text-slate-400"></i> ${r.CAPACITY} pax</td>
-        <td class="px-6 py-4 font-medium text-emerald-400">₹ ${Number(r.HOURLY_RATE).toFixed(2)}/hr</td>
-        <td class="px-6 py-4">
-          <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${statusColor}">
-            ${r.STATUS}
-          </span>
-        </td>
-        <td class="px-6 py-4 text-right">
-          <div class="flex items-center justify-end gap-2">
-            <button onclick="openEditRoomModal(${r.ROOM_ID})" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-medium border border-amber-500/30 transition flex items-center gap-1">
-              <i class="fa-solid fa-pen-to-square"></i> Update
-            </button>
-            <button onclick="deleteRoom(${r.ROOM_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-medium border border-rose-500/30 transition flex items-center gap-1">
-              <i class="fa-solid fa-trash"></i> Delete
-            </button>
+      <div class="bg-dark-900 border border-slate-800 rounded-3xl overflow-hidden hover:border-slate-700 transition shadow-xl flex flex-col justify-between group">
+        <div>
+          <!-- Card Banner with Badge -->
+          <div class="h-32 bg-gradient-to-tr from-slate-900 via-dark-850 to-sky-950/40 p-4 flex flex-col justify-between border-b border-slate-800/80 relative">
+            <div class="flex justify-between items-start">
+              <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-dark-950/90 text-sky-400 border border-slate-700 backdrop-blur">
+                ${room.ROOM_TYPE}
+              </span>
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> ${room.STATUS}
+              </span>
+            </div>
+            <div>
+              <span class="text-[11px] text-slate-400 block"><i class="fa-solid fa-location-dot text-sky-500 mr-1"></i>${room.SPACE_NAME}</span>
+              <h3 class="text-lg font-extrabold text-white group-hover:text-sky-400 transition">${room.ROOM_NAME}</h3>
+            </div>
           </div>
-        </td>
-      </tr>
+
+          <!-- Specs & Amenities -->
+          <div class="p-5 space-y-4 text-xs">
+            <div class="grid grid-cols-2 gap-3 py-2 border-b border-slate-800/80">
+              <div class="flex items-center gap-2 text-slate-300">
+                <i class="fa-solid fa-users text-slate-500"></i>
+                <span>Capacity: <strong class="text-white">${room.CAPACITY} Pax</strong></span>
+              </div>
+              <div class="flex items-center gap-2 text-slate-300">
+                <i class="fa-solid fa-tag text-slate-500"></i>
+                <span>Rate: <strong class="text-emerald-400 font-mono">₹${Number(room.HOURLY_RATE).toFixed(0)}/hr</strong></span>
+              </div>
+            </div>
+
+            <!-- Facilities Tags -->
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Included Amenities:</span>
+              <div class="flex flex-wrap gap-1.5">
+                ${facilitiesList.map(f => `
+                  <span class="px-2 py-0.5 rounded-md bg-slate-800/80 text-[10px] text-slate-300 border border-slate-700/60 flex items-center gap-1">
+                    <i class="fa-solid fa-check text-[8px] text-sky-400"></i> ${f}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Footer -->
+        <div class="p-5 pt-0 flex items-center gap-2">
+          <button onclick="openSlotPickerForRoom(${room.ROOM_ID})" class="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20">
+            <i class="fa-solid fa-calendar-check text-xs"></i> Select Slots & Lock
+          </button>
+          <button onclick="openEditRoomModal(${room.ROOM_ID})" class="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center text-xs border border-slate-700 transition" title="Update Room in Oracle">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button onclick="deleteRoom(${room.ROOM_ID})" class="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center justify-center text-xs border border-slate-700 transition" title="Delete Room from Oracle">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
     `;
   }).join('');
 }
 
+function selectRoomFromMap(roomId) {
+  openSlotPickerForRoom(roomId);
+}
+
+// ====================================================================
+// VIEW 3: CALENDAR & TIME-SLOT TIMELINE PICKER
+// ====================================================================
+
+function populateTimelineRoomDropdown() {
+  const select = document.getElementById('timeline-room-select');
+  if (!select) return;
+  select.innerHTML = state.rooms.map(r => `
+    <option value="${r.ROOM_ID}" ${Number(r.ROOM_ID) === Number(state.selectedTimelineRoomId) ? 'selected' : ''}>
+      ${r.ROOM_NAME} (₹${r.HOURLY_RATE}/hr, ${r.CAPACITY} pax)
+    </option>
+  `).join('');
+}
+
+function openSlotPickerForRoom(roomId) {
+  if (roomId) {
+    state.selectedTimelineRoomId = roomId;
+    const select = document.getElementById('timeline-room-select');
+    if (select) select.value = roomId;
+  }
+  state.selectedStartHour = null;
+  state.selectedEndHour = null;
+  switchTab('timeline');
+}
+
+function shiftTimelineDate(days) {
+  const cur = new Date(state.timelineDate);
+  cur.setDate(cur.getDate() + days);
+  state.timelineDate = cur.toISOString().split('T')[0];
+  const dp = document.getElementById('timeline-date-picker');
+  if (dp) dp.value = state.timelineDate;
+  state.selectedStartHour = null;
+  state.selectedEndHour = null;
+  renderTimelineGrid();
+}
+
+function setTimelineDate(mode) {
+  const cur = new Date();
+  if (mode === 'tomorrow') cur.setDate(cur.getDate() + 1);
+  else if (mode === 'monday') {
+    const day = cur.getDay();
+    const diff = cur.getDate() + (day === 0 ? 1 : 8 - day);
+    cur.setDate(diff);
+  }
+  state.timelineDate = cur.toISOString().split('T')[0];
+  const dp = document.getElementById('timeline-date-picker');
+  if (dp) dp.value = state.timelineDate;
+  state.selectedStartHour = null;
+  state.selectedEndHour = null;
+  renderTimelineGrid();
+}
+
+function renderTimelineGrid() {
+  const select = document.getElementById('timeline-room-select');
+  if (select) state.selectedTimelineRoomId = select.value;
+
+  const dp = document.getElementById('timeline-date-picker');
+  if (dp) {
+    if (!dp.value) dp.value = state.timelineDate;
+    else state.timelineDate = dp.value;
+  }
+
+  const curRoom = state.rooms.find(r => Number(r.ROOM_ID) === Number(state.selectedTimelineRoomId)) || state.rooms[0];
+  if (!curRoom) return;
+
+  // Header meta
+  document.getElementById('timeline-current-room-name').textContent = curRoom.ROOM_NAME;
+  document.getElementById('timeline-current-rate').textContent = `₹ ${Number(curRoom.HOURLY_RATE).toFixed(0)}/hr`;
+  document.getElementById('timeline-current-space-city').textContent = `${curRoom.SPACE_NAME}, ${curRoom.CITY}`;
+
+  // Find confirmed bookings for this room on this date in Oracle
+  const existingBookings = state.bookings.filter(b => 
+    Number(b.ROOM_ID) === Number(curRoom.ROOM_ID) &&
+    b.BOOKING_DATE === state.timelineDate &&
+    b.STATUS === 'CONFIRMED'
+  );
+
+  const container = document.getElementById('hourly-blocks-container');
+  container.innerHTML = '';
+
+  // Hours 08:00 to 20:00 (12 one-hour slots)
+  const hours = [
+    { start: 8, label: '08:00 - 09:00' },
+    { start: 9, label: '09:00 - 10:00' },
+    { start: 10, label: '10:00 - 11:00' },
+    { start: 11, label: '11:00 - 12:00' },
+    { start: 12, label: '12:00 - 13:00' },
+    { start: 13, label: '13:00 - 14:00' },
+    { start: 14, label: '14:00 - 15:00' },
+    { start: 15, label: '15:00 - 16:00' },
+    { start: 16, label: '16:00 - 17:00' },
+    { start: 17, label: '17:00 - 18:00' },
+    { start: 18, label: '18:00 - 19:00' },
+    { start: 19, label: '19:00 - 20:00' }
+  ];
+
+  hours.forEach(slot => {
+    // Check if slot overlaps with any confirmed booking in Oracle
+    const isBooked = existingBookings.some(b => {
+      const bStart = parseInt(b.START_TIME.split(':')[0], 10);
+      const bEnd = parseInt(b.END_TIME.split(':')[0], 10);
+      return slot.start >= bStart && slot.start < bEnd;
+    });
+
+    const isSelected = state.selectedStartHour !== null && 
+                       slot.start >= state.selectedStartHour && 
+                       slot.start < state.selectedEndHour;
+
+    const block = document.createElement('div');
+    block.className = `time-block p-3 rounded-xl text-center border text-xs font-mono font-semibold transition ${
+      isBooked ? 'booked' : (isSelected ? 'selected' : 'available')
+    }`;
+
+    block.innerHTML = `
+      <div class="text-[11px] mb-1">${slot.label}</div>
+      <div class="text-[10px] uppercase font-bold tracking-wider">
+        ${isBooked ? '🔒 Reserved' : (isSelected ? '✓ Selected' : 'Free Slot')}
+      </div>
+    `;
+
+    if (!isBooked) {
+      block.onclick = () => handleSlotClick(slot.start);
+    }
+
+    container.appendChild(block);
+  });
+
+  updateSelectedTimelineSummary(curRoom);
+}
+
+function handleSlotClick(hour) {
+  if (state.selectedStartHour === null) {
+    state.selectedStartHour = hour;
+    state.selectedEndHour = hour + 1;
+  } else if (state.selectedStartHour !== null && state.selectedEndHour === (state.selectedStartHour + 1) && hour > state.selectedStartHour) {
+    state.selectedEndHour = hour + 1;
+  } else {
+    // Reset selection
+    state.selectedStartHour = hour;
+    state.selectedEndHour = hour + 1;
+  }
+  renderTimelineGrid();
+}
+
+function updateSelectedTimelineSummary(curRoom) {
+  const summarySpan = document.getElementById('timeline-selected-span');
+  const priceSpan = document.getElementById('timeline-selected-price');
+  const btn = document.getElementById('btn-proceed-checkout');
+
+  if (state.selectedStartHour !== null && state.selectedEndHour !== null) {
+    const duration = state.selectedEndHour - state.selectedStartHour;
+    const sStr = String(state.selectedStartHour).padStart(2, '0') + ':00';
+    const eStr = String(state.selectedEndHour).padStart(2, '0') + ':00';
+    const total = duration * Number(curRoom.HOURLY_RATE);
+
+    summarySpan.innerHTML = `<span class="text-amber-400 font-mono">${sStr} - ${eStr}</span> (${duration} hr${duration > 1 ? 's' : ''}) on <span class="text-sky-400 font-mono">${state.timelineDate}</span>`;
+    priceSpan.textContent = `₹ ${total.toFixed(2)}`;
+    btn.disabled = false;
+
+    // Cache checkout details
+    state.checkoutData = {
+      room: curRoom,
+      date: state.timelineDate,
+      startTime: sStr,
+      endTime: eStr,
+      durationHours: duration,
+      basePrice: total
+    };
+  } else {
+    summarySpan.textContent = 'Click on free time slots above to select';
+    priceSpan.textContent = '₹ 0.00';
+    btn.disabled = true;
+    state.checkoutData = null;
+  }
+}
+
+// ====================================================================
+// VIEW 4: CHECKOUT & CONFIRMATION MODAL
+// ====================================================================
+
+function launchCheckoutFromTimeline() {
+  if (!state.checkoutData) return;
+  const d = state.checkoutData;
+
+  document.getElementById('checkout-room-name').textContent = d.room.ROOM_NAME;
+  document.getElementById('checkout-space-loc').textContent = `${d.room.SPACE_NAME}, ${d.room.CITY}`;
+  document.getElementById('checkout-date').textContent = d.date;
+  document.getElementById('checkout-slot').textContent = `${d.startTime} - ${d.endTime}`;
+  document.getElementById('checkout-duration').textContent = `${d.durationHours} Hour(s)`;
+  document.getElementById('checkout-rate').textContent = `₹ ${d.room.HOURLY_RATE}/hr`;
+
+  // Reset checkboxes & promo
+  document.getElementById('addon-coffee').checked = false;
+  document.getElementById('addon-recording').checked = false;
+  document.getElementById('addon-concierge').checked = false;
+  document.getElementById('checkout-promo-input').value = '';
+  state.appliedPromo = null;
+
+  recalculateCheckoutTotal();
+  openModal('checkout-modal');
+}
+
+function recalculateCheckoutTotal() {
+  if (!state.checkoutData) return;
+
+  let total = state.checkoutData.basePrice;
+  let amenitiesTotal = 0;
+
+  if (document.getElementById('addon-coffee').checked) amenitiesTotal += 200;
+  if (document.getElementById('addon-recording').checked) amenitiesTotal += 500;
+  if (document.getElementById('addon-concierge').checked) amenitiesTotal += 600;
+
+  total += amenitiesTotal;
+
+  // Apply promo
+  let discount = 0;
+  if (state.appliedPromo === 'VIT2026') {
+    discount = total * 0.20; // 20% discount
+  } else if (state.appliedPromo === 'STARTUP50') {
+    discount = Math.min(500, total * 0.5);
+  }
+
+  total = Math.max(0, total - discount);
+
+  // Add 18% GST standard in India
+  const gst = total * 0.18;
+  const grandTotal = total + gst;
+
+  document.getElementById('checkout-grand-total').textContent = `₹ ${grandTotal.toFixed(2)}`;
+
+  const discountBadge = document.getElementById('checkout-discount-badge');
+  if (discount > 0) {
+    discountBadge.textContent = `Promo Code Applied: -₹${discount.toFixed(2)} savings + 18% GST`;
+    discountBadge.classList.remove('hidden');
+  } else {
+    discountBadge.textContent = '+ 18% GST applicable';
+    discountBadge.classList.remove('hidden');
+  }
+
+  state.checkoutData.calculatedGrandTotal = grandTotal;
+}
+
+function applyPromoCode() {
+  const code = document.getElementById('checkout-promo-input').value.trim().toUpperCase();
+  if (code === 'VIT2026' || code === 'STARTUP50') {
+    state.appliedPromo = code;
+    showToast(`Promo "${code}" applied successfully!`, 'success');
+    recalculateCheckoutTotal();
+  } else {
+    showToast('Invalid promo code. Try: VIT2026 or STARTUP50', 'error');
+  }
+}
+
+function selectPaymentMethod(method) {
+  state.selectedPaymentMethod = method;
+  document.querySelectorAll('.pay-method-btn').forEach(btn => btn.classList.remove('active', 'bg-sky-600', 'text-white'));
+  
+  if (method === 'UPI') document.getElementById('pay-btn-UPI').classList.add('active', 'bg-sky-600', 'text-white');
+  else if (method === 'Credit Card') document.getElementById('pay-btn-CARD').classList.add('active', 'bg-sky-600', 'text-white');
+  else if (method === 'Net Banking') document.getElementById('pay-btn-NET').classList.add('active', 'bg-sky-600', 'text-white');
+  else if (method === 'Corporate Account') document.getElementById('pay-btn-CORP').classList.add('active', 'bg-sky-600', 'text-white');
+}
+
+async function submitCompleteCheckout() {
+  if (!state.checkoutData) return;
+
+  const btn = document.getElementById('btn-confirm-payment');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> Writing to Oracle 21c...`;
+
+  // Use Mantavya's Member ID (1001) as primary logged-in user
+  const defaultMember = state.members[0] || { MEMBER_ID: 1001 };
+
+  const payload = {
+    member_id: defaultMember.MEMBER_ID,
+    room_id: state.checkoutData.room.ROOM_ID,
+    booking_date: state.checkoutData.date,
+    start_time: state.checkoutData.startTime,
+    end_time: state.checkoutData.endTime,
+    total_amount: state.checkoutData.calculatedGrandTotal,
+    payment_method: state.selectedPaymentMethod
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-check-double"></i> Authorize & Lock Space`;
+
+    if (data.success) {
+      showToast('Reservation Locked & Settled in Oracle DB!', 'success');
+      closeModal('checkout-modal');
+      await loadBookings();
+      await loadPayments();
+      await loadStats();
+      switchTab('dashboard');
+    } else {
+      // Caught Oracle trigger error (e.g. ORA-20001 double booking)
+      showToast(data.error, 'error');
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-check-double"></i> Authorize & Lock Space`;
+    showToast(err.message, 'error');
+  }
+}
+
+// ====================================================================
+// CRUD: ROOMS & MEMBERS (FACULTY RUBRIC M-1, M-2, M-3)
+// ====================================================================
+
 function openNewRoomModal() {
-  document.getElementById('room-modal-title').textContent = 'Add Meeting Room (Insert)';
+  document.getElementById('room-modal-title').textContent = 'Add Space (Insert)';
   document.getElementById('room-id').value = '';
   document.getElementById('room-form').reset();
   openModal('room-modal');
@@ -230,6 +797,7 @@ async function handleRoomSubmit(e) {
       closeModal('room-modal');
       await loadRooms();
       await loadStats();
+      renderCatalog();
     } else {
       showToast(data.error || 'Operation failed', 'error');
     }
@@ -239,9 +807,7 @@ async function handleRoomSubmit(e) {
 }
 
 async function deleteRoom(id) {
-  if (!confirm(`Are you sure you want to delete Room #${id}? This will cascade delete linked facilities and bookings in Oracle.`)) {
-    return;
-  }
+  if (!confirm(`Permanently delete room #${id} from Oracle DB? All linked reservations and facilities will cascade delete.`)) return;
 
   try {
     const res = await fetch(`${API_BASE}/rooms/${id}`, { method: 'DELETE' });
@@ -250,6 +816,7 @@ async function deleteRoom(id) {
       showToast(data.message, 'success');
       await loadRooms();
       await loadStats();
+      renderCatalog();
     } else {
       showToast(data.error || 'Failed to delete room', 'error');
     }
@@ -259,51 +826,39 @@ async function deleteRoom(id) {
 }
 
 // ----------------- MEMBERS CRUD -----------------
-async function loadMembers() {
-  try {
-    const res = await fetch(`${API_BASE}/members`);
-    const data = await res.json();
-    if (data.success) {
-      state.members = data.data;
-      renderMembersTable(state.members);
-      populateBookingMembersSelect(state.members);
-    }
-  } catch (err) {
-    console.error('Failed to load members:', err);
-  }
-}
-
 function renderMembersTable(members) {
   const tbody = document.getElementById('members-table-body');
+  if (!tbody) return;
+
   if (!members || members.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">No members found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">No members registered.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = members.map(m => `
     <tr class="hover:bg-slate-800/40 transition">
-      <td class="px-6 py-4 font-mono text-xs text-sky-400">#${m.MEMBER_ID}</td>
-      <td class="px-6 py-4 font-semibold text-white">${m.FIRST_NAME} ${m.LAST_NAME}</td>
-      <td class="px-6 py-4 text-slate-400">${m.EMAIL}</td>
-      <td class="px-6 py-4 text-slate-300 font-mono text-xs">${m.PHONE || '-'}</td>
+      <td class="px-6 py-4 font-mono text-sky-400">#${m.MEMBER_ID}</td>
+      <td class="px-6 py-4 font-bold text-white">${m.FIRST_NAME} ${m.LAST_NAME}</td>
+      <td class="px-6 py-4 text-slate-400 font-mono">${m.EMAIL}</td>
+      <td class="px-6 py-4 text-slate-300 font-mono">${m.PHONE || '-'}</td>
       <td class="px-6 py-4">
-        <span class="px-2.5 py-0.5 text-xs font-semibold rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-          ${m.PLAN_NAME || 'Standard'}
+        <span class="px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          ${m.PLAN_NAME || 'Standard'} (₹${m.MONTHLY_FEE || 0}/mo)
         </span>
       </td>
-      <td class="px-6 py-4 text-slate-400 text-xs">${m.JOIN_DATE}</td>
+      <td class="px-6 py-4 text-slate-400 font-mono">${m.JOIN_DATE}</td>
       <td class="px-6 py-4">
-        <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
           ${m.STATUS}
         </span>
       </td>
       <td class="px-6 py-4 text-right">
         <div class="flex items-center justify-end gap-2">
-          <button onclick="openEditMemberModal(${m.MEMBER_ID})" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-medium border border-amber-500/30 transition flex items-center gap-1">
-            <i class="fa-solid fa-pen-to-square"></i> Update
+          <button onclick="openEditMemberModal(${m.MEMBER_ID})" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-semibold border border-amber-500/30 transition">
+            Update
           </button>
-          <button onclick="deleteMember(${m.MEMBER_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-medium border border-rose-500/30 transition flex items-center gap-1">
-            <i class="fa-solid fa-trash"></i> Delete
+          <button onclick="deleteMember(${m.MEMBER_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-semibold border border-rose-500/30 transition">
+            Delete
           </button>
         </div>
       </td>
@@ -312,7 +867,7 @@ function renderMembersTable(members) {
 }
 
 function openNewMemberModal() {
-  document.getElementById('member-modal-title').textContent = 'Register New Member (Insert)';
+  document.getElementById('member-modal-title').textContent = 'Register Member (Insert)';
   document.getElementById('member-id').value = '';
   document.getElementById('member-form').reset();
   openModal('member-modal');
@@ -369,9 +924,7 @@ async function handleMemberSubmit(e) {
 }
 
 async function deleteMember(id) {
-  if (!confirm(`Are you sure you want to delete Member #${id}? Linked bookings will also be removed in Oracle.`)) {
-    return;
-  }
+  if (!confirm(`Delete member #${id}? All associated reservations will be deleted in Oracle.`)) return;
 
   try {
     const res = await fetch(`${API_BASE}/members/${id}`, { method: 'DELETE' });
@@ -388,160 +941,9 @@ async function deleteMember(id) {
   }
 }
 
-// ----------------- BOOKINGS CRUD & TRIGGER DEMO -----------------
-async function loadBookings() {
-  try {
-    const res = await fetch(`${API_BASE}/bookings`);
-    const data = await res.json();
-    if (data.success) {
-      state.bookings = data.data;
-      renderBookingsTable(state.bookings);
-    }
-  } catch (err) {
-    console.error('Failed to load bookings:', err);
-  }
-}
-
-function renderBookingsTable(bookings) {
-  const tbody = document.getElementById('bookings-table-body');
-  if (!bookings || bookings.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">No bookings found.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = bookings.map(b => {
-    const statusColor = b.STATUS === 'CONFIRMED'
-      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-      : (b.STATUS === 'CANCELLED' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20');
-
-    return `
-      <tr class="hover:bg-slate-800/40 transition">
-        <td class="px-6 py-4 font-mono text-xs text-sky-400">#${b.BOOKING_ID}</td>
-        <td class="px-6 py-4">
-          <div class="font-semibold text-white">${b.MEMBER_NAME}</div>
-          <div class="text-xs text-slate-400">${b.EMAIL}</div>
-        </td>
-        <td class="px-6 py-4">
-          <div class="font-medium text-slate-200">${b.ROOM_NAME}</div>
-          <div class="text-xs text-slate-500">${b.SPACE_NAME}</div>
-        </td>
-        <td class="px-6 py-4 font-mono text-xs text-slate-300">${b.BOOKING_DATE}</td>
-        <td class="px-6 py-4 font-mono text-xs text-amber-400">${b.START_TIME} - ${b.END_TIME}</td>
-        <td class="px-6 py-4 font-bold text-emerald-400">₹ ${Number(b.TOTAL_AMOUNT).toFixed(2)}</td>
-        <td class="px-6 py-4">
-          <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${statusColor}">
-            ${b.STATUS}
-          </span>
-        </td>
-        <td class="px-6 py-4 text-right">
-          <div class="flex items-center justify-end gap-2">
-            ${b.STATUS === 'CONFIRMED' ? `
-              <button onclick="cancelBooking(${b.BOOKING_ID})" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-medium border border-amber-500/30 transition flex items-center gap-1">
-                <i class="fa-solid fa-ban"></i> Cancel
-              </button>
-            ` : ''}
-            <button onclick="deleteBooking(${b.BOOKING_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-medium border border-rose-500/30 transition flex items-center gap-1">
-              <i class="fa-solid fa-trash"></i> Delete
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function populateBookingRoomsSelect(rooms) {
-  const select = document.getElementById('booking-room-id');
-  if (!select) return;
-  select.innerHTML = rooms.map(r => `
-    <option value="${r.ROOM_ID}" data-rate="${r.HOURLY_RATE}">${r.ROOM_NAME} (₹${r.HOURLY_RATE}/hr, ${r.CAPACITY} pax)</option>
-  `).join('');
-}
-
-function populateBookingMembersSelect(members) {
-  const select = document.getElementById('booking-member-id');
-  if (!select) return;
-  select.innerHTML = members.map(m => `
-    <option value="${m.MEMBER_ID}">${m.FIRST_NAME} ${m.LAST_NAME} (${m.EMAIL})</option>
-  `).join('');
-}
-
-function openNewBookingModal() {
-  document.getElementById('booking-form').reset();
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('booking-date').value = today;
-  document.getElementById('booking-start').value = '10:00';
-  document.getElementById('booking-end').value = '12:00';
-  calculateBookingPrice();
-  openModal('booking-modal');
-}
-
-function calculateBookingPrice() {
-  const roomSelect = document.getElementById('booking-room-id');
-  const selectedOption = roomSelect.options[roomSelect.selectedIndex];
-  const rate = selectedOption ? Number(selectedOption.getAttribute('data-rate') || 0) : 0;
-
-  const start = document.getElementById('booking-start').value;
-  const end = document.getElementById('booking-end').value;
-
-  if (start && end) {
-    const [sh, sm] = start.split(':').map(Number);
-    const [eh, em] = end.split(':').map(Number);
-    const durationHours = (eh + em / 60) - (sh + sm / 60);
-
-    if (durationHours > 0) {
-      const total = durationHours * rate;
-      document.getElementById('booking-calculated-amount').textContent = total.toFixed(2);
-      return total;
-    }
-  }
-  document.getElementById('booking-calculated-amount').textContent = '0.00';
-  return 0;
-}
-
-async function handleBookingSubmit(e) {
-  e.preventDefault();
-  const totalAmount = calculateBookingPrice();
-
-  if (totalAmount <= 0) {
-    showToast('End time must be after Start time!', 'error');
-    return;
-  }
-
-  const payload = {
-    member_id: document.getElementById('booking-member-id').value,
-    room_id: document.getElementById('booking-room-id').value,
-    booking_date: document.getElementById('booking-date').value,
-    start_time: document.getElementById('booking-start').value,
-    end_time: document.getElementById('booking-end').value,
-    total_amount: totalAmount,
-    payment_method: document.getElementById('booking-payment-method').value
-  };
-
-  try {
-    const res = await fetch(`${API_BASE}/bookings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      showToast(data.message, 'success');
-      closeModal('booking-modal');
-      await loadBookings();
-      await loadPayments();
-      await loadStats();
-    } else {
-      // Oracle Trigger Error (e.g. ORA-20001 double booking)
-      showToast(data.error, 'error');
-    }
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-
+// ----------------- CANCELLATION -----------------
 async function cancelBooking(id) {
+  if (!confirm(`Cancel reservation #${id}?`)) return;
   try {
     const res = await fetch(`${API_BASE}/bookings/${id}`, {
       method: 'PUT',
@@ -550,9 +952,10 @@ async function cancelBooking(id) {
     });
     const data = await res.json();
     if (data.success) {
-      showToast('Booking status set to CANCELLED in Oracle DB', 'info');
+      showToast('Reservation marked CANCELLED in Oracle DB', 'info');
       await loadBookings();
       await loadStats();
+      renderDashboard();
     } else {
       showToast(data.error, 'error');
     }
@@ -561,63 +964,33 @@ async function cancelBooking(id) {
   }
 }
 
-async function deleteBooking(id) {
-  if (!confirm(`Permanently delete booking #${id} from Oracle DB?`)) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/bookings/${id}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (data.success) {
-      showToast(data.message, 'success');
-      await loadBookings();
-      await loadPayments();
-      await loadStats();
-    } else {
-      showToast(data.error, 'error');
-    }
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-
-// ----------------- PAYMENTS -----------------
-async function loadPayments() {
-  try {
-    const res = await fetch(`${API_BASE}/payments`);
-    const data = await res.json();
-    if (data.success) {
-      state.payments = data.data;
-      renderPaymentsTable(state.payments);
-    }
-  } catch (err) {
-    console.error('Failed to load payments:', err);
-  }
-}
-
+// ----------------- PAYMENTS LEDGER -----------------
 function renderPaymentsTable(payments) {
   const tbody = document.getElementById('payments-table-body');
+  if (!tbody) return;
+
   if (!payments || payments.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-400">No payment records found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-500">No payment receipts found.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = payments.map(p => `
     <tr class="hover:bg-slate-800/40 transition">
-      <td class="px-6 py-4 font-mono text-xs text-sky-400">#${p.PAYMENT_ID}</td>
-      <td class="px-6 py-4 font-mono text-xs text-slate-400">#${p.BOOKING_ID}</td>
-      <td class="px-6 py-4 font-semibold text-white">${p.MEMBER_NAME}</td>
+      <td class="px-6 py-4 font-mono text-sky-400">#${p.PAYMENT_ID}</td>
+      <td class="px-6 py-4 font-mono text-slate-400">#${p.BOOKING_ID}</td>
+      <td class="px-6 py-4 font-bold text-white">${p.MEMBER_NAME}</td>
       <td class="px-6 py-4 text-slate-300">${p.ROOM_NAME}</td>
       <td class="px-6 py-4 font-bold text-emerald-400">₹ ${Number(p.AMOUNT).toFixed(2)}</td>
-      <td class="px-6 py-4 text-xs font-mono text-indigo-400">${p.PAYMENT_METHOD}</td>
-      <td class="px-6 py-4 text-xs text-slate-400">${p.PAYMENT_DATE}</td>
+      <td class="px-6 py-4 font-mono text-indigo-400">${p.PAYMENT_METHOD}</td>
+      <td class="px-6 py-4 text-slate-400 font-mono">${p.PAYMENT_DATE}</td>
       <td class="px-6 py-4">
-        <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
           ${p.STATUS}
         </span>
       </td>
       <td class="px-6 py-4 text-right">
-        <button onclick="deletePayment(${p.PAYMENT_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-medium border border-rose-500/30 transition">
-          <i class="fa-solid fa-trash"></i> Delete
+        <button onclick="deletePayment(${p.PAYMENT_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-semibold border border-rose-500/30 transition">
+          Delete
         </button>
       </td>
     </tr>
@@ -642,7 +1015,7 @@ async function deletePayment(id) {
 }
 
 // ====================================================================
-// "TYPE QUERY & FETCH IT" SQL CONSOLE
+// VIEW 6: "TYPE QUERY & FETCH IT" SQL CONSOLE
 // ====================================================================
 
 const PRESETS = {
@@ -698,9 +1071,8 @@ async function executeCustomQuery() {
     return;
   }
 
-  // Loading state
   btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> Executing...`;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> Executing on Oracle...`;
   meta.textContent = 'Query running on Oracle 21c...';
   outputContainer.classList.add('hidden');
   errorContainer.classList.add('hidden');
@@ -714,14 +1086,13 @@ async function executeCustomQuery() {
 
     const data = await res.json();
     btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-play text-xs"></i> Execute Query (Fetch)`;
+    btn.innerHTML = `<i class="fa-solid fa-play text-xs"></i> Run Query (Fetch)`;
 
     if (data.success) {
       meta.textContent = `Completed in ${data.executionTimeMs} ms | ${data.rowCount} rows returned`;
       renderQueryResults(data.columns, data.rows);
       outputContainer.classList.remove('hidden');
 
-      // If it was an INSERT, UPDATE, or DELETE, refresh the rest of the application
       if (/^\s*(INSERT|UPDATE|DELETE)/i.test(sqlInput)) {
         showToast('Database updated via SQL query!', 'success');
         refreshAllData();
@@ -733,7 +1104,7 @@ async function executeCustomQuery() {
     }
   } catch (err) {
     btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-play text-xs"></i> Execute Query (Fetch)`;
+    btn.innerHTML = `<i class="fa-solid fa-play text-xs"></i> Run Query (Fetch)`;
     meta.textContent = 'Execution failed';
     errorText.textContent = err.message;
     errorContainer.classList.remove('hidden');
@@ -765,7 +1136,7 @@ function renderQueryResults(columns, rows) {
   `).join('');
 }
 
-// Keyboard shortcut: Ctrl+Enter executes the query
+// Shortcuts & Startup
 document.addEventListener('DOMContentLoaded', () => {
   const sqlInput = document.getElementById('sql-input');
   if (sqlInput) {
@@ -777,6 +1148,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initial Load
   refreshAllData();
 });

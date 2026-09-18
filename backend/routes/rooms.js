@@ -2,17 +2,35 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../database/db');
 
-// GET all rooms with space name
+// GET all rooms with space name and facilities
 router.get('/', async (req, res) => {
   try {
-    const sql = `
+    const roomsSql = `
       SELECT r.room_id, r.space_id, r.room_name, r.room_type, r.capacity, r.hourly_rate, r.status, s.name as space_name, s.city
       FROM MEETING_ROOMS r
       JOIN COWORKING_SPACES s ON r.space_id = s.space_id
       ORDER BY r.room_id ASC
     `;
-    const result = await db.query(sql);
-    res.json({ success: true, data: result.rows });
+    const facSql = `SELECT room_id, facility_name, quantity FROM ROOM_FACILITIES`;
+    
+    const [roomsRes, facRes] = await Promise.all([
+      db.query(roomsSql),
+      db.query(facSql)
+    ]);
+
+    const facMap = {};
+    (facRes.rows || []).forEach(f => {
+      const rid = f.ROOM_ID;
+      if (!facMap[rid]) facMap[rid] = [];
+      facMap[rid].push(f.FACILITY_NAME);
+    });
+
+    const enrichedRooms = (roomsRes.rows || []).map(r => ({
+      ...r,
+      FACILITIES: facMap[r.ROOM_ID] || []
+    }));
+
+    res.json({ success: true, data: enrichedRooms });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -1,48 +1,88 @@
-/* Custom CSS for Co-working Space Booking System */
+/* Modern Styling for CoWorkSphere */
 
-/* Smooth transitions */
 * {
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+  transition: all 0.15s ease-out;
 }
 
-/* Scrollbar styles */
+/* Custom modern scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #090d16;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1e293b;
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #334155;
 }
 
-/* Nav Tab Active States */
+/* Navigation Tabs */
 .nav-tab.active {
   background-color: #0284c7;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
 }
-
 .nav-tab:not(.active) {
   color: #94a3b8;
 }
-
 .nav-tab:not(.active):hover {
-  background-color: #334155;
+  background-color: #1e293b;
   color: #f8fafc;
 }
 
-/* Code editor textarea font */
-#sql-input {
-  tab-size: 2;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  line-height: 1.5;
+/* Filter pills */
+.room-pill.active {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+/* Floor Plan Interactive Zone Hover Effects */
+.floor-zone {
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.floor-zone:hover rect {
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.5));
+  stroke-width: 3px;
+}
+
+/* Time-Slot Blocks */
+.time-block {
+  cursor: pointer;
+  user-select: none;
+}
+.time-block.available {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+.time-block.available:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+  transform: translateY(-2px);
+}
+.time-block.selected {
+  background: #0284c7 !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+  transform: translateY(-2px);
+}
+.time-block.booked {
+  background: rgba(225, 29, 72, 0.12) !important;
+  border: 1px solid rgba(225, 29, 72, 0.3) !important;
+  color: #f43f5e !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Payment Gateway Buttons */
+.pay-method-btn.active {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #38bdf8;
 }
