@@ -22,7 +22,7 @@ Built with **Oracle Database 21c XE**, **SQL\*Plus**, **PL/SQL**, **Node.js (Exp
 The project strictly adheres to modular separation across three independent tiers:
 
 ```text
-IDP proejct/
+dbms project/
 ├── database/                   # Database Tier (Oracle DDL, PL/SQL, Seeds)
 │   ├── schema_oracle.sql       # Relational Schema with PK, FK, and CHECK constraints
 │   ├── triggers_and_procedures.sql # PL/SQL Triggers, Procedures, and Functions
