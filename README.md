@@ -179,6 +179,28 @@ Wraps room booking and payment generation into an atomic database transaction.
 
 ---
 
+## 💻 Modern Consumer UI (Appspace-Inspired Design System)
+The presentation layer was remodeled into a clean, bright, white enterprise aesthetic inspired by industry leader **Appspace Conference Room Scheduling Software**:
+1. **Executive Dashboard Overview**: Real-time KPI statistics cards, active reservation manager with instant cancellation, member credits/hours allowance meter, and live activity alerts.
+2. **Interactive Floor Plan & Space Catalog**:
+   - **Interactive 2D SVG Layout Map**: Clickable spatial zones (boardrooms, meeting suites, video labs, and hot desks) colored by live Oracle availability with hover tooltips.
+   - **High-Resolution Photo Grid**: Commercial office photography from Unsplash, dynamic category tabs (Boardroom, Meeting, Hot Desk, Private Pod), hub location filters (Guindy, OMR, Anna Nagar, T. Nagar), and multi-amenity filtering.
+3. **Real-Time Hourly Slot Matrix**:
+   - Visual 08:00 – 20:00 hourly reservation matrix.
+   - Automatic slot-blocking in soft red with padlock indicators for slots already reserved in Oracle.
+   - Click-to-select range picker for immediate booking.
+4. **Checkout & Confirmation Drawer**:
+   - Booking breakdown with dynamically calculated amenity add-ons (gourmet catering, 4K recording, concierge).
+   - Promo code validation engine (`VIT2026` for 20% discount, `STARTUP50` for ₹500 off) + 18% GST calculation.
+   - Multi-gateway payment selector (UPI, Credit/Debit Card, Net Banking, Corporate Account).
+5. **Evaluation-Ready CRUD Controls**:
+   - Add/Insert Room & Member modals.
+   - Update Room & Member dialogs.
+   - Delete action buttons that trigger cascading Oracle foreign key updates.
+   - "Type query & fetch it" SQL Terminal with multi-table preset joins.
+
+---
+
 ## 🚀 How to Run the Project
 
 ### Prerequisites
