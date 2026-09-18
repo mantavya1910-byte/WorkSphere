@@ -45,7 +45,7 @@ VALUES (SEQ_ORGS.NEXTVAL, 'BioGenix Diagnostics', 'Healthcare and Biotech');
 
 -- 4. Insert Members
 INSERT INTO MEMBERS (member_id, first_name, last_name, email, phone, plan_id, join_date, status)
-VALUES (SEQ_MEMBERS.NEXTVAL, 'Mantavya', 'Sharma', 'mantavya.sharma2026@vitstudent.ac.in', '+91 9876543210', 202, SYSDATE - 60, 'ACTIVE');
+VALUES (SEQ_MEMBERS.NEXTVAL, 'Arjun', 'Mehta', 'arjun.mehta@worksphere.io', '+91 9876543210', 202, SYSDATE - 60, 'ACTIVE');
 
 INSERT INTO MEMBERS (member_id, first_name, last_name, email, phone, plan_id, join_date, status)
 VALUES (SEQ_MEMBERS.NEXTVAL, 'Aditya', 'Rao', 'aditya.rao@quantixai.com', '+91 9840123456', 203, SYSDATE - 45, 'ACTIVE');

@@ -1,4 +1,4 @@
-// CoWorkSphere - Enterprise Frontend Logic & Oracle Integration
+// WorkSphere - Enterprise Frontend Logic & Oracle Integration
 const API_BASE = '/api';
 
 // Application State
@@ -742,7 +742,7 @@ async function submitCompleteCheckout() {
   btn.disabled = true;
   btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> Writing to Oracle 21c...`;
 
-  // Use Mantavya's Member ID (1001) as primary logged-in user
+  // Use default active resident member for checkout booking
   const defaultMember = state.members[0] || { MEMBER_ID: 1001 };
 
   const payload = {

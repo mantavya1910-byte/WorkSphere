@@ -1,7 +1,7 @@
-﻿{
-  "name": "coworking-booking-system",
+{
+  "name": "worksphere-booking-system",
   "version": "1.0.0",
-  "description": "Co-working Space & Meeting Room Booking System - DBMS Project with Oracle SQL, PL/SQL & Dynamic CRUD Frontend",
+  "description": "WorkSphere - Meeting Room & Workspace Scheduling Platform (DBMS Project with Oracle SQL, PL/SQL & Dynamic CRUD Frontend)",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
@@ -12,11 +12,11 @@
     "oracle",
     "sqlplus",
     "plsql",
-    "coworking-space",
+    "worksphere",
     "booking-system",
     "vit-chennai"
   ],
-  "author": "Mantavya Sharma",
+  "author": "WorkSphere Team",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",

@@ -1,19 +1,18 @@
-# Co-working Space & Meeting Room Booking System
+# WorkSphere - Meeting Room & Workspace Scheduling Platform
 **Interdisciplinary Project (IDP) / DBMS Course Project (DA-II)**  
 *Vellore Institute of Technology (VIT), Chennai*
 
 ---
 
 ## 📌 Project Overview
-The **Co-working Space & Meeting Room Booking System** is an enterprise-grade database management application engineered to handle workspace locations, meeting rooms, amenities, memberships, reservations, and payment invoicing across urban co-working networks. 
+**WorkSphere** is an enterprise-grade database management application engineered to handle workspace locations, meeting rooms, amenities, memberships, reservations, and payment invoicing across urban flexible office networks. 
 
 Built with **Oracle Database 21c XE**, **SQL\*Plus**, **PL/SQL**, **Node.js (Express)**, and a modern **Vanilla JavaScript & Tailwind CSS** frontend GUI, the system enforces relational integrity, ACID transactional compliance, automated conflict-detection triggers, and live interactive SQL execution.
 
 ---
 
-## 👨‍💻 Student Details
-- **Student Name:** Mantavya Sharma
-- **Registration Number:** 25BCE5583
+## 🏛️ Project Details
+- **Project Title:** WorkSphere - Enterprise Workspace & Room Scheduling System
 - **Institution:** Vellore Institute of Technology (VIT), Chennai
 - **Course:** Database Management Systems (DBMS) / Interdisciplinary Project (IDP)
 
