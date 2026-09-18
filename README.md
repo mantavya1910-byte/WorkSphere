@@ -1,6 +1,11 @@
 # WorkSphere - Meeting Room & Workspace Scheduling Platform
-**Interdisciplinary Project (IDP) / DBMS Course Project (DA-II)**  
-*Vellore Institute of Technology (VIT), Chennai*
+
+---
+
+## 👥 Team Members
+- **Mantavya Sharma** — `25BCE5583`
+- **Purva Golande** — `25BCE5535`
+- **Shivangi Vashisht** — `25BCE5577`
 
 ---
 
@@ -8,13 +13,6 @@
 **WorkSphere** is an enterprise-grade database management application engineered to handle workspace locations, meeting rooms, amenities, memberships, reservations, and payment invoicing across urban flexible office networks. 
 
 Built with **Oracle Database 21c XE**, **SQL\*Plus**, **PL/SQL**, **Node.js (Express)**, and a modern **Vanilla JavaScript & Tailwind CSS** frontend GUI, the system enforces relational integrity, ACID transactional compliance, automated conflict-detection triggers, and live interactive SQL execution.
-
----
-
-## 🏛️ Project Details
-- **Project Title:** WorkSphere - Enterprise Workspace & Room Scheduling System
-- **Institution:** Vellore Institute of Technology (VIT), Chennai
-- **Course:** Database Management Systems (DBMS) / Interdisciplinary Project (IDP)
 
 ---
 
@@ -268,4 +266,4 @@ ORDER BY b.booking_date ASC;
 ---
 
 ## 📄 License
-Academic Coursework Project - Developed for **VIT Chennai**. All Rights Reserved.
+Academic Coursework Project. All Rights Reserved.
