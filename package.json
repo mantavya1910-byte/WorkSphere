@@ -1,0 +1,25 @@
+﻿{
+  "name": "coworking-booking-system",
+  "version": "1.0.0",
+  "description": "Co-working Space & Meeting Room Booking System - DBMS Project with Oracle SQL, PL/SQL & Dynamic CRUD Frontend",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "init-db": "node database/init_oracle.js"
+  },
+  "keywords": [
+    "dbms",
+    "oracle",
+    "sqlplus",
+    "plsql",
+    "coworking-space",
+    "booking-system",
+    "vit-chennai"
+  ],
+  "author": "Mantavya Sharma",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}

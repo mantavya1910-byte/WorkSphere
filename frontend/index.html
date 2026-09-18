@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Co-working Space & Meeting Room Booking System | Oracle 21c</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 700: '#075985', 900: '#0c4a6e' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700/60 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <i class="fa-solid fa-building text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-lg tracking-tight text-white">CoWork<span class="text-sky-400">Sphere</span></span>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center gap-1">
+              <i class="fa-solid fa-database text-[10px]"></i> Oracle 21c XE
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">VIT Chennai - Interdisciplinary Project (DA-II)</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex space-x-1">
+        <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="nav-tab active px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-chart-pie text-xs"></i> Overview
+        </button>
+        <button onclick="switchTab('rooms')" id="tab-btn-rooms" class="nav-tab px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-door-open text-xs"></i> Meeting Rooms
+        </button>
+        <button onclick="switchTab('members')" id="tab-btn-members" class="nav-tab px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-users text-xs"></i> Members
+        </button>
+        <button onclick="switchTab('bookings')" id="tab-btn-bookings" class="nav-tab px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-calendar-check text-xs"></i> Bookings
+        </button>
+        <button onclick="switchTab('payments')" id="tab-btn-payments" class="nav-tab px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-receipt text-xs"></i> Payments
+        </button>
+        <button onclick="switchTab('query')" id="tab-btn-query" class="nav-tab px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 text-amber-400 hover:text-amber-300">
+          <i class="fa-solid fa-terminal text-xs"></i> SQL Console
+        </button>
+      </nav>
+
+      <!-- Status Indicator -->
+      <div class="flex items-center space-x-3">
+        <div id="db-status-badge" class="flex items-center gap-2 text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-full">
+          <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Oracle: XEPDB1</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="fixed top-20 right-6 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none"></div>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+    <!-- TAB 1: OVERVIEW -->
+    <section id="tab-dashboard" class="tab-content">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">System Overview & Analytics</h1>
+          <p class="text-sm text-slate-400">Live statistics computed dynamically using SQL queries on Oracle 21c</p>
+        </div>
+        <button onclick="refreshAllData()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg border border-slate-600/60 transition flex items-center gap-2">
+          <i class="fa-solid fa-rotate text-xs"></i> Refresh Data
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-3">
+            <span class="text-xs uppercase font-semibold tracking-wider">Total Coworking Spaces</span>
+            <div class="h-8 w-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center"><i class="fa-solid fa-city"></i></div>
+          </div>
+          <div class="text-3xl font-extrabold text-white" id="stat-spaces">-</div>
+          <span class="text-xs text-slate-500 mt-1 block">Across Chennai Metro</span>
+        </div>
+
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-3">
+            <span class="text-xs uppercase font-semibold tracking-wider">Available Rooms</span>
+            <div class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-door-open"></i></div>
+          </div>
+          <div class="text-3xl font-extrabold text-white" id="stat-rooms">-</div>
+          <span class="text-xs text-emerald-400 mt-1 block flex items-center gap-1"><i class="fa-solid fa-check text-[10px]"></i> Ready for Immediate Booking</span>
+        </div>
+
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-3">
+            <span class="text-xs uppercase font-semibold tracking-wider">Active Members</span>
+            <div class="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center"><i class="fa-solid fa-user-group"></i></div>
+          </div>
+          <div class="text-3xl font-extrabold text-white" id="stat-members">-</div>
+          <span class="text-xs text-slate-500 mt-1 block">Registered in Database</span>
+        </div>
+
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 mb-3">
+            <span class="text-xs uppercase font-semibold tracking-wider">Total Revenue</span>
+            <div class="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+          </div>
+          <div class="text-3xl font-extrabold text-amber-400" id="stat-revenue">-</div>
+          <span class="text-xs text-slate-500 mt-1 block">From Completed Bookings</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-800/40 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="h-10 w-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center mb-4"><i class="fa-solid fa-calendar-plus text-lg"></i></div>
+            <h3 class="text-lg font-semibold text-white mb-1">Book a Meeting Room</h3>
+            <p class="text-sm text-slate-400 mb-4">Select date, time, and room. Enforced by Oracle trigger to block double-booking.</p>
+          </div>
+          <button onclick="openNewBookingModal()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"><i class="fa-solid fa-plus"></i> New Reservation</button>
+        </div>
+
+        <div class="bg-gradient-to-br from-slate-800 to-slate-800/40 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4"><i class="fa-solid fa-user-plus text-lg"></i></div>
+            <h3 class="text-lg font-semibold text-white mb-1">Register New Member</h3>
+            <p class="text-sm text-slate-400 mb-4">Add members with unique email constraint and foreign key to membership plans.</p>
+          </div>
+          <button onclick="openNewMemberModal()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"><i class="fa-solid fa-user-plus"></i> Add Member</button>
+        </div>
+
+        <div class="bg-gradient-to-br from-slate-800 to-slate-800/40 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4"><i class="fa-solid fa-code text-lg"></i></div>
+            <h3 class="text-lg font-semibold text-white mb-1">Interactive SQL Console</h3>
+            <p class="text-sm text-slate-400 mb-4">'Type query and fetch it' - run custom SELECT, JOIN, and aggregation queries directly on Oracle.</p>
+          </div>
+          <button onclick="switchTab('query')" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"><i class="fa-solid fa-terminal"></i> Open SQL Terminal</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ROOMS -->
+    <section id="tab-rooms" class="tab-content hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Meeting Rooms & Spaces</h1>
+          <p class="text-sm text-slate-400">Data fetched dynamically from Oracle table <code class="text-sky-400 bg-slate-800 px-1 rounded">MEETING_ROOMS</code></p>
+        </div>
+        <button onclick="openNewRoomModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-plus"></i> Add Room (Insert)
+        </button>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-800/90 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-4">Room ID</th>
+                <th class="px-6 py-4">Room Name</th>
+                <th class="px-6 py-4">Location / Space</th>
+                <th class="px-6 py-4">Type</th>
+                <th class="px-6 py-4">Capacity</th>
+                <th class="px-6 py-4">Hourly Rate</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4 text-right">Actions (CRUD)</th>
+              </tr>
+            </thead>
+            <tbody id="rooms-table-body" class="divide-y divide-slate-700/50">
+              <tr><td colspan="8" class="text-center py-8 text-slate-400">Loading rooms from Oracle DB...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MEMBERS -->
+    <section id="tab-members" class="tab-content hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Members & Profiles</h1>
+          <p class="text-sm text-slate-400">Manage registered members with plan association from <code class="text-sky-400 bg-slate-800 px-1 rounded">MEMBERS</code></p>
+        </div>
+        <button onclick="openNewMemberModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-user-plus"></i> Add Member (Insert)
+        </button>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-800/90 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-4">Member ID</th>
+                <th class="px-6 py-4">Name</th>
+                <th class="px-6 py-4">Email</th>
+                <th class="px-6 py-4">Phone</th>
+                <th class="px-6 py-4">Plan</th>
+                <th class="px-6 py-4">Join Date</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4 text-right">Actions (CRUD)</th>
+              </tr>
+            </thead>
+            <tbody id="members-table-body" class="divide-y divide-slate-700/50">
+              <tr><td colspan="8" class="text-center py-8 text-slate-400">Loading members from Oracle DB...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: BOOKINGS -->
+    <section id="tab-bookings" class="tab-content hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Room Bookings & Reservations</h1>
+          <p class="text-sm text-slate-400">Enforced by PL/SQL Trigger <code class="text-amber-400 bg-slate-800 px-1 rounded">TRG_CHECK_ROOM_OVERLAP</code></p>
+        </div>
+        <button onclick="openNewBookingModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-plus"></i> New Booking (Insert)
+        </button>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-800/90 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-4">Booking ID</th>
+                <th class="px-6 py-4">Member</th>
+                <th class="px-6 py-4">Meeting Room</th>
+                <th class="px-6 py-4">Date</th>
+                <th class="px-6 py-4">Time Slot</th>
+                <th class="px-6 py-4">Amount</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4 text-right">Actions (CRUD)</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-table-body" class="divide-y divide-slate-700/50">
+              <tr><td colspan="8" class="text-center py-8 text-slate-400">Loading bookings from Oracle DB...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: PAYMENTS -->
+    <section id="tab-payments" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Payments & Invoicing</h1>
+          <p class="text-sm text-slate-400">Records from Oracle table <code class="text-sky-400 bg-slate-800 px-1 rounded">PAYMENTS</code></p>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-800/90 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-4">Payment ID</th>
+                <th class="px-6 py-4">Booking ID</th>
+                <th class="px-6 py-4">Member Name</th>
+                <th class="px-6 py-4">Room</th>
+                <th class="px-6 py-4">Amount</th>
+                <th class="px-6 py-4">Method</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="payments-table-body" class="divide-y divide-slate-700/50">
+              <tr><td colspan="8" class="text-center py-8 text-slate-400">Loading payments from Oracle DB...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: SQL QUERY CONSOLE -->
+    <section id="tab-query" class="tab-content hidden">
+      <div class="mb-6">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="h-8 w-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center"><i class="fa-solid fa-terminal"></i></div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Interactive SQL Console</h1>
+        </div>
+        <p class="text-sm text-slate-400">Type any valid Oracle SQL query below and fetch results in real-time. Executes directly on Oracle 21c Database.</p>
+      </div>
+
+      <div class="mb-4 bg-slate-800/70 border border-slate-700 p-4 rounded-xl">
+        <span class="text-xs uppercase font-bold text-slate-400 tracking-wider block mb-2">
+          <i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Quick Presets (Click to Load):
+        </span>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadPresetQuery('rooms_and_spaces')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-200 rounded-lg transition border border-slate-600">JOIN: Rooms + Spaces</button>
+          <button onclick="loadPresetQuery('active_bookings')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-200 rounded-lg transition border border-slate-600">JOIN: Bookings + Members + Rooms</button>
+          <button onclick="loadPresetQuery('revenue_by_room')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-200 rounded-lg transition border border-slate-600">GROUP BY: Revenue per Room</button>
+          <button onclick="loadPresetQuery('member_plans')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-200 rounded-lg transition border border-slate-600">JOIN: Members + Plans</button>
+          <button onclick="loadPresetQuery('room_facilities')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-200 rounded-lg transition border border-slate-600">Room Facilities</button>
+          <button onclick="loadPresetQuery('all_tables')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-200 rounded-lg transition border border-slate-600">List All Tables in Schema</button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-xl mb-6">
+        <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-700 flex justify-between items-center text-xs text-slate-400">
+          <span class="font-mono flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400"></span> Oracle SQL Query Editor</span>
+          <span class="text-[11px] text-slate-500">Ctrl+Enter to Execute</span>
+        </div>
+        <textarea id="sql-input" rows="5" class="w-full bg-slate-950 text-emerald-400 font-mono text-sm p-4 focus:outline-none focus:ring-1 focus:ring-sky-500 selection:bg-sky-700 resize-y">SELECT r.room_id, r.room_name, r.room_type, r.capacity, r.hourly_rate, s.name as space_name, s.city
+FROM MEETING_ROOMS r
+JOIN COWORKING_SPACES s ON r.space_id = s.space_id
+ORDER BY r.capacity DESC</textarea>
+        <div class="bg-slate-800/50 px-4 py-3 border-t border-slate-800 flex justify-between items-center">
+          <div id="query-execution-meta" class="text-xs text-slate-400">Ready to execute query</div>
+          <button id="btn-run-query" onclick="executeCustomQuery()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold text-sm rounded-lg shadow-md transition flex items-center gap-2">
+            <i class="fa-solid fa-play text-xs"></i> Execute Query (Fetch)
+          </button>
+        </div>
+      </div>
+
+      <div id="query-output-container" class="hidden">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-table text-sky-400"></i> Query Results (<span id="query-row-count">0</span> rows)
+          </h3>
+        </div>
+        <div class="bg-slate-800/60 border border-slate-700 rounded-2xl overflow-hidden shadow-lg">
+          <div class="overflow-x-auto max-h-[450px]">
+            <table class="w-full text-left text-sm text-slate-300" id="query-result-table">
+              <thead class="bg-slate-800 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700 sticky top-0" id="query-table-head"></thead>
+              <tbody id="query-table-body" class="divide-y divide-slate-700/50"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="query-error-container" class="hidden bg-rose-500/10 border border-rose-500/40 rounded-2xl p-5 text-rose-300 text-sm font-mono">
+        <div class="flex items-center gap-2 font-bold mb-1 text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> Oracle Execution Error:</div>
+        <div id="query-error-text"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: ADD / EDIT ROOM -->
+  <div id="room-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="room-modal-title" class="text-lg font-bold text-white">Add Meeting Room</h3>
+        <button onclick="closeModal('room-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="room-form" onsubmit="handleRoomSubmit(event)" class="space-y-4">
+        <input type="hidden" id="room-id">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Coworking Space</label>
+          <select id="room-space-id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Room Name</label>
+          <input type="text" id="room-name" required placeholder="e.g. Kaveri Conference Suite" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Room Type</label>
+            <select id="room-type" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+              <option value="Conference Room">Conference Room</option>
+              <option value="Meeting Pod">Meeting Pod</option>
+              <option value="Boardroom Elite">Boardroom Elite</option>
+              <option value="Hot Desk Lounge">Hot Desk Lounge</option>
+              <option value="Training Hall">Training Hall</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Status</label>
+            <select id="room-status" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="OCCUPIED">OCCUPIED</option>
+              <option value="MAINTENANCE">MAINTENANCE</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Capacity (Persons)</label>
+            <input type="number" id="room-capacity" min="1" required placeholder="12" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Hourly Rate (Rs)</label>
+            <input type="number" id="room-rate" min="1" step="0.5" required placeholder="1200" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+          <button type="button" onclick="closeModal('room-modal')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium rounded-lg">Cancel</button>
+          <button type="submit" id="room-submit-btn" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg">Save Room</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT MEMBER -->
+  <div id="member-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="member-modal-title" class="text-lg font-bold text-white">Register Member</h3>
+        <button onclick="closeModal('member-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="member-form" onsubmit="handleMemberSubmit(event)" class="space-y-4">
+        <input type="hidden" id="member-id">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">First Name</label>
+            <input type="text" id="member-first-name" required placeholder="Mantavya" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Last Name</label>
+            <input type="text" id="member-last-name" required placeholder="Sharma" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Email Address (Unique Constraint)</label>
+          <input type="email" id="member-email" required placeholder="mantavya@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Phone Number</label>
+            <input type="text" id="member-phone" placeholder="+91 9876543210" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Membership Plan</label>
+            <select id="member-plan-id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"></select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+          <button type="button" onclick="closeModal('member-modal')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium rounded-lg">Cancel</button>
+          <button type="submit" id="member-submit-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg">Save Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NEW BOOKING -->
+  <div id="booking-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white">Create Room Reservation</h3>
+        <button onclick="closeModal('booking-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Select Member</label>
+          <select id="booking-member-id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Select Meeting Room</label>
+          <select id="booking-room-id" required onchange="calculateBookingPrice()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"></select>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Date</label>
+            <input type="date" id="booking-date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Start Time</label>
+            <input type="time" id="booking-start" required onchange="calculateBookingPrice()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">End Time</label>
+            <input type="time" id="booking-end" required onchange="calculateBookingPrice()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Payment Method</label>
+            <select id="booking-payment-method" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+              <option value="UPI">UPI</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Debit Card">Debit Card</option>
+              <option value="Net Banking">Net Banking</option>
+              <option value="Corporate Account">Corporate Account</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Calculated Amount</label>
+            <div class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold text-emerald-400 flex items-center">
+              Rs <span id="booking-calculated-amount" class="ml-1">0.00</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-300">
+          <i class="fa-solid fa-shield-halved mr-1"></i> PL/SQL Trigger Active: If this room is already booked for this time window, Oracle will reject the transaction with <code class="bg-slate-900 px-1 rounded font-mono">ORA-20001</code>.
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+          <button type="button" onclick="closeModal('booking-modal')" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg">Confirm Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-center text-xs text-slate-500">
+    Co-working Space & Meeting Room Booking System | DBMS DA-II Project | VIT Chennai
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
