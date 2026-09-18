@@ -216,35 +216,35 @@ function renderDashboardBookings() {
 
   if (activeBookings.length === 0) {
     container.innerHTML = `
-      <div class="text-center py-8 text-slate-500 text-xs">
-        <i class="fa-solid fa-calendar-xmark text-2xl text-slate-600 block mb-2"></i>
-        No active reservations found. Click "Book a Time Slot" to lock a room!
+      <div class="text-center py-10 text-slate-400 text-xs">
+        <i class="fa-solid fa-calendar-xmark text-2xl text-slate-300 block mb-2"></i>
+        No active reservations found. Click "Book a Time Slot" to lock a space!
       </div>
     `;
     return;
   }
 
   container.innerHTML = activeBookings.map(b => `
-    <div class="p-4 rounded-2xl bg-dark-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-700 transition">
+    <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-md hover:border-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
       <div class="flex items-start gap-3.5">
-        <div class="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center shrink-0">
+        <div class="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
           <i class="fa-solid fa-door-open"></i>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h4 class="font-bold text-white text-sm">${b.ROOM_NAME}</h4>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">CONFIRMED</span>
+            <h4 class="font-bold text-slate-900 text-sm">${b.ROOM_NAME}</h4>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">CONFIRMED</span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">${b.SPACE_NAME} • Reserved by <span class="text-slate-300 font-medium">${b.MEMBER_NAME}</span></p>
-          <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1 font-mono">
-            <span class="text-slate-300"><i class="fa-regular fa-calendar text-[10px] mr-1 text-slate-500"></i>${b.BOOKING_DATE}</span>
-            <span class="text-amber-400 font-bold"><i class="fa-regular fa-clock text-[10px] mr-1"></i>${b.START_TIME} - ${b.END_TIME}</span>
-            <span class="text-emerald-400 font-bold">₹${Number(b.TOTAL_AMOUNT).toFixed(2)}</span>
+          <p class="text-xs text-slate-500 mt-0.5">${b.SPACE_NAME} • Reserved by <span class="text-slate-800 font-semibold">${b.MEMBER_NAME}</span></p>
+          <div class="flex items-center gap-3 text-[11px] text-slate-600 mt-1 font-mono">
+            <span><i class="fa-regular fa-calendar text-[10px] mr-1 text-slate-400"></i>${b.BOOKING_DATE}</span>
+            <span class="text-blue-700 font-bold"><i class="fa-regular fa-clock text-[10px] mr-1"></i>${b.START_TIME} - ${b.END_TIME}</span>
+            <span class="text-emerald-700 font-bold">₹${Number(b.TOTAL_AMOUNT).toFixed(2)}</span>
           </div>
         </div>
       </div>
       <div class="flex items-center gap-2 self-end sm:self-center">
-        <button onclick="cancelBooking(${b.BOOKING_ID})" class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold border border-rose-500/30 transition">
+        <button onclick="cancelBooking(${b.BOOKING_ID})" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition">
           <i class="fa-solid fa-ban text-[10px] mr-1"></i> Cancel
         </button>
       </div>
@@ -317,6 +317,26 @@ function applyRoomFilters() {
   renderCatalog();
 }
 
+function getRoomImage(room) {
+  const name = (room.ROOM_NAME || '').toLowerCase();
+  const type = (room.ROOM_TYPE || '').toLowerCase();
+
+  if (name.includes('titan') || name.includes('apex')) {
+    return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80';
+  } else if (name.includes('nexus') || name.includes('video')) {
+    return 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=800&q=80';
+  } else if (name.includes('emerald') || type.includes('meeting')) {
+    return 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80';
+  } else if (type.includes('hot') || name.includes('desk')) {
+    return 'https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&w=800&q=80';
+  } else if (name.includes('focus') || name.includes('pod')) {
+    return 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80';
+  } else if (type.includes('private')) {
+    return 'https://images.unsplash.com/photo-1505409859467-3a796fd5798e?auto=format&fit=crop&w=800&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=800&q=80';
+}
+
 function renderCatalog() {
   const container = document.getElementById('rooms-catalog-cards');
   if (!container) return;
@@ -349,10 +369,12 @@ function renderCatalog() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div class="col-span-full text-center py-16 bg-dark-900 border border-slate-800 rounded-3xl">
-        <i class="fa-solid fa-filter-circle-xmark text-4xl text-slate-600 mb-3 block"></i>
-        <h4 class="font-bold text-white text-base">No spaces match your filters</h4>
-        <p class="text-xs text-slate-400 mt-1">Try relaxing your hub or capacity filters to explore more options.</p>
+      <div class="col-span-full text-center py-16 bg-white border border-slate-200 rounded-3xl shadow-sm">
+        <div class="h-16 w-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 text-2xl">
+          <i class="fa-solid fa-filter-circle-xmark"></i>
+        </div>
+        <h4 class="font-bold text-slate-900 text-base">No spaces match your filters</h4>
+        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Try relaxing your hub location or capacity filters to explore more available conference rooms and hot desks.</p>
       </div>
     `;
     return;
@@ -363,45 +385,65 @@ function renderCatalog() {
       ? room.FACILITIES.slice(0, 3)
       : ['High-Speed Wi-Fi', 'Power Outlets', 'Ergonomic Seating'];
 
+    const imgUrl = getRoomImage(room);
+
     return `
-      <div class="bg-dark-900 border border-slate-800 rounded-3xl overflow-hidden hover:border-slate-700 transition shadow-xl flex flex-col justify-between group">
+      <div class="bg-white border border-slate-200/90 rounded-2xl overflow-hidden hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col justify-between group">
         <div>
-          <!-- Card Banner with Badge -->
-          <div class="h-32 bg-gradient-to-tr from-slate-900 via-dark-850 to-sky-950/40 p-4 flex flex-col justify-between border-b border-slate-800/80 relative">
-            <div class="flex justify-between items-start">
-              <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-dark-950/90 text-sky-400 border border-slate-700 backdrop-blur">
-                ${room.ROOM_TYPE}
+          <!-- Image Header with Badges -->
+          <div class="h-44 relative overflow-hidden bg-slate-100">
+            <img src="${imgUrl}" alt="${room.ROOM_NAME}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent"></div>
+            
+            <!-- Top Badges -->
+            <div class="absolute top-3 inset-x-3 flex justify-between items-center">
+              <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/95 text-slate-800 shadow-sm backdrop-blur border border-white/50">
+                <i class="fa-solid fa-layer-group text-blue-600 mr-1"></i> ${room.ROOM_TYPE}
               </span>
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> ${room.STATUS}
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${room.STATUS === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'} flex items-center gap-1 shadow-sm">
+                <span class="h-1.5 w-1.5 rounded-full ${room.STATUS === 'AVAILABLE' ? 'bg-emerald-500' : 'bg-rose-500'}"></span> ${room.STATUS}
               </span>
             </div>
-            <div>
-              <span class="text-[11px] text-slate-400 block"><i class="fa-solid fa-location-dot text-sky-500 mr-1"></i>${room.SPACE_NAME}</span>
-              <h3 class="text-lg font-extrabold text-white group-hover:text-sky-400 transition">${room.ROOM_NAME}</h3>
+
+            <!-- Bottom Card Title inside Image overlay -->
+            <div class="absolute bottom-3 inset-x-3 text-white">
+              <span class="text-[11px] text-blue-200 font-medium block flex items-center gap-1">
+                <i class="fa-solid fa-location-dot text-blue-400"></i> ${room.SPACE_NAME}
+              </span>
+              <h3 class="text-base font-bold text-white tracking-tight drop-shadow-sm">${room.ROOM_NAME}</h3>
             </div>
           </div>
 
           <!-- Specs & Amenities -->
           <div class="p-5 space-y-4 text-xs">
-            <div class="grid grid-cols-2 gap-3 py-2 border-b border-slate-800/80">
-              <div class="flex items-center gap-2 text-slate-300">
-                <i class="fa-solid fa-users text-slate-500"></i>
-                <span>Capacity: <strong class="text-white">${room.CAPACITY} Pax</strong></span>
+            <div class="grid grid-cols-2 gap-3 py-2 border-b border-slate-100">
+              <div class="flex items-center gap-2 text-slate-600">
+                <div class="h-7 w-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs">
+                  <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-400 uppercase font-semibold">Capacity</div>
+                  <strong class="text-slate-900 font-bold">${room.CAPACITY} Pax</strong>
+                </div>
               </div>
-              <div class="flex items-center gap-2 text-slate-300">
-                <i class="fa-solid fa-tag text-slate-500"></i>
-                <span>Rate: <strong class="text-emerald-400 font-mono">₹${Number(room.HOURLY_RATE).toFixed(0)}/hr</strong></span>
+              <div class="flex items-center gap-2 text-slate-600">
+                <div class="h-7 w-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                  <i class="fa-solid fa-tag"></i>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-400 uppercase font-semibold">Hourly Rate</div>
+                  <strong class="text-emerald-700 font-bold font-mono">₹${Number(room.HOURLY_RATE).toFixed(0)}/hr</strong>
+                </div>
               </div>
             </div>
 
             <!-- Facilities Tags -->
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Included Amenities:</span>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Included Amenities</span>
               <div class="flex flex-wrap gap-1.5">
                 ${facilitiesList.map(f => `
-                  <span class="px-2 py-0.5 rounded-md bg-slate-800/80 text-[10px] text-slate-300 border border-slate-700/60 flex items-center gap-1">
-                    <i class="fa-solid fa-check text-[8px] text-sky-400"></i> ${f}
+                  <span class="px-2.5 py-1 rounded-md bg-slate-50 text-[11px] text-slate-700 border border-slate-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-check text-[9px] text-blue-600"></i> ${f}
                   </span>
                 `).join('')}
               </div>
@@ -410,14 +452,14 @@ function renderCatalog() {
         </div>
 
         <!-- Action Footer -->
-        <div class="p-5 pt-0 flex items-center gap-2">
-          <button onclick="openSlotPickerForRoom(${room.ROOM_ID})" class="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20">
+        <div class="p-5 pt-0 flex items-center gap-2 border-t border-slate-100/80 mt-2">
+          <button onclick="openSlotPickerForRoom(${room.ROOM_ID})" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
             <i class="fa-solid fa-calendar-check text-xs"></i> Select Slots & Lock
           </button>
-          <button onclick="openEditRoomModal(${room.ROOM_ID})" class="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center text-xs border border-slate-700 transition" title="Update Room in Oracle">
+          <button onclick="openEditRoomModal(${room.ROOM_ID})" class="h-9 w-9 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-600 hover:text-amber-700 flex items-center justify-center text-xs border border-slate-200 hover:border-amber-300 transition" title="Update Room in Oracle">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
-          <button onclick="deleteRoom(${room.ROOM_ID})" class="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center justify-center text-xs border border-slate-700 transition" title="Delete Room from Oracle">
+          <button onclick="deleteRoom(${room.ROOM_ID})" class="h-9 w-9 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-700 flex items-center justify-center text-xs border border-slate-200 hover:border-rose-300 transition" title="Delete Room from Oracle">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
@@ -831,33 +873,33 @@ function renderMembersTable(members) {
   if (!tbody) return;
 
   if (!members || members.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">No members registered.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">No members registered.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = members.map(m => `
-    <tr class="hover:bg-slate-800/40 transition">
-      <td class="px-6 py-4 font-mono text-sky-400">#${m.MEMBER_ID}</td>
-      <td class="px-6 py-4 font-bold text-white">${m.FIRST_NAME} ${m.LAST_NAME}</td>
-      <td class="px-6 py-4 text-slate-400 font-mono">${m.EMAIL}</td>
-      <td class="px-6 py-4 text-slate-300 font-mono">${m.PHONE || '-'}</td>
+    <tr class="hover:bg-blue-50/40 border-b border-slate-100 transition">
+      <td class="px-6 py-4 font-mono font-bold text-blue-600">#${m.MEMBER_ID}</td>
+      <td class="px-6 py-4 font-bold text-slate-900">${m.FIRST_NAME} ${m.LAST_NAME}</td>
+      <td class="px-6 py-4 text-slate-600 font-mono text-xs">${m.EMAIL}</td>
+      <td class="px-6 py-4 text-slate-600 font-mono text-xs">${m.PHONE || '-'}</td>
       <td class="px-6 py-4">
-        <span class="px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+        <span class="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
           ${m.PLAN_NAME || 'Standard'} (₹${m.MONTHLY_FEE || 0}/mo)
         </span>
       </td>
-      <td class="px-6 py-4 text-slate-400 font-mono">${m.JOIN_DATE}</td>
+      <td class="px-6 py-4 text-slate-500 font-mono text-xs">${m.JOIN_DATE}</td>
       <td class="px-6 py-4">
-        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
           ${m.STATUS}
         </span>
       </td>
       <td class="px-6 py-4 text-right">
         <div class="flex items-center justify-end gap-2">
-          <button onclick="openEditMemberModal(${m.MEMBER_ID})" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-semibold border border-amber-500/30 transition">
+          <button onclick="openEditMemberModal(${m.MEMBER_ID})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-semibold border border-amber-200 transition">
             Update
           </button>
-          <button onclick="deleteMember(${m.MEMBER_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-semibold border border-rose-500/30 transition">
+          <button onclick="deleteMember(${m.MEMBER_ID})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-lg text-xs font-semibold border border-rose-200 transition">
             Delete
           </button>
         </div>
@@ -970,26 +1012,30 @@ function renderPaymentsTable(payments) {
   if (!tbody) return;
 
   if (!payments || payments.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-500">No payment receipts found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-400">No payment receipts found.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = payments.map(p => `
-    <tr class="hover:bg-slate-800/40 transition">
-      <td class="px-6 py-4 font-mono text-sky-400">#${p.PAYMENT_ID}</td>
-      <td class="px-6 py-4 font-mono text-slate-400">#${p.BOOKING_ID}</td>
-      <td class="px-6 py-4 font-bold text-white">${p.MEMBER_NAME}</td>
-      <td class="px-6 py-4 text-slate-300">${p.ROOM_NAME}</td>
-      <td class="px-6 py-4 font-bold text-emerald-400">₹ ${Number(p.AMOUNT).toFixed(2)}</td>
-      <td class="px-6 py-4 font-mono text-indigo-400">${p.PAYMENT_METHOD}</td>
-      <td class="px-6 py-4 text-slate-400 font-mono">${p.PAYMENT_DATE}</td>
+    <tr class="hover:bg-blue-50/40 border-b border-slate-100 transition">
+      <td class="px-6 py-4 font-mono font-bold text-blue-600">#${p.PAYMENT_ID}</td>
+      <td class="px-6 py-4 font-mono text-slate-400 text-xs">#${p.BOOKING_ID}</td>
+      <td class="px-6 py-4 font-bold text-slate-900">${p.MEMBER_NAME}</td>
+      <td class="px-6 py-4 text-slate-700 font-medium">${p.ROOM_NAME}</td>
+      <td class="px-6 py-4 font-bold text-emerald-700 font-mono">₹ ${Number(p.AMOUNT).toFixed(2)}</td>
       <td class="px-6 py-4">
-        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+          ${p.PAYMENT_METHOD}
+        </span>
+      </td>
+      <td class="px-6 py-4 text-slate-500 font-mono text-xs">${p.PAYMENT_DATE}</td>
+      <td class="px-6 py-4">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
           ${p.STATUS}
         </span>
       </td>
       <td class="px-6 py-4 text-right">
-        <button onclick="deletePayment(${p.PAYMENT_ID})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs font-semibold border border-rose-500/30 transition">
+        <button onclick="deletePayment(${p.PAYMENT_ID})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold border border-rose-200 transition">
           Delete
         </button>
       </td>
@@ -1118,20 +1164,20 @@ function renderQueryResults(columns, rows) {
 
   if (!columns || columns.length === 0) {
     thead.innerHTML = '';
-    tbody.innerHTML = `<tr><td class="px-6 py-6 text-center text-slate-400">Command executed successfully (no rows returned).</td></tr>`;
+    tbody.innerHTML = `<tr><td class="px-6 py-6 text-center text-slate-500 font-medium">Command executed successfully on Oracle 21c (no rows returned).</td></tr>`;
     return;
   }
 
-  thead.innerHTML = `<tr>${columns.map(c => `<th class="px-6 py-3 font-mono text-sky-400">${c}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr class="bg-slate-50 border-b border-slate-200">${columns.map(c => `<th class="px-6 py-3 font-mono text-xs font-bold text-slate-700 uppercase tracking-wider text-left">${c}</th>`).join('')}</tr>`;
 
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${columns.length}" class="px-6 py-6 text-center text-slate-400">0 rows returned.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${columns.length}" class="px-6 py-6 text-center text-slate-500 font-medium">0 rows returned from Oracle.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = rows.map(row => `
-    <tr class="hover:bg-slate-800/50 transition">
-      ${columns.map(c => `<td class="px-6 py-3 font-mono text-xs text-slate-300">${row[c] !== null && row[c] !== undefined ? row[c] : '<span class="text-slate-600">NULL</span>'}</td>`).join('')}
+    <tr class="hover:bg-blue-50/50 border-b border-slate-100 transition">
+      ${columns.map(c => `<td class="px-6 py-3 font-mono text-xs text-slate-800">${row[c] !== null && row[c] !== undefined ? row[c] : '<span class="text-slate-400 italic">NULL</span>'}</td>`).join('')}
     </tr>
   `).join('');
 }
