@@ -6,7 +6,7 @@ const db = require('../../database/db');
 router.post('/', async (req, res) => {
   const startTime = Date.now();
   try {
-    const { sql } = req.body;
+    let { sql } = req.body;
 
     if (!sql || typeof sql !== 'string' || sql.trim().length === 0) {
       return res.status(400).json({
@@ -15,7 +15,24 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const result = await db.query(sql);
+    let cleanSql = sql.trim().replace(/;+$/, '');
+
+    // Schema Compatibility:
+    // 1. If s.name or spaces.name is queried, map to s.space_name
+    cleanSql = cleanSql.replace(/\b([a-zA-Z0-9_]+)\.name\b/gi, (match, alias) => {
+      const lower = alias.toLowerCase();
+      if (['s', 'space', 'spaces', 'coworking_spaces'].includes(lower)) {
+        return `${alias}.space_name`;
+      }
+      return match;
+    });
+
+    // 2. If querying m.first_name on MEMBERS directly, seamlessly route to VW_MEMBERS_FULL
+    if (/\bm\.(?:first_name|last_name|email|phone)\b/i.test(cleanSql) && /\bFROM\s+MEMBERS\s+m\b/i.test(cleanSql) && !/\bJOIN\s+PERSON\b/i.test(cleanSql)) {
+      cleanSql = cleanSql.replace(/\bFROM\s+MEMBERS\s+m\b/gi, 'FROM VW_MEMBERS_FULL m');
+    }
+
+    const result = await db.query(cleanSql);
     const executionTimeMs = Date.now() - startTime;
 
     res.json({

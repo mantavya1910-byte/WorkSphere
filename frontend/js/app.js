@@ -1034,13 +1034,57 @@ function renderPaymentsTable(payments) {
           ${p.STATUS}
         </span>
       </td>
-      <td class="px-6 py-4 text-right">
-        <button onclick="deletePayment(${p.PAYMENT_ID})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold border border-rose-200 transition">
+      <td class="px-6 py-4 text-right flex items-center justify-end gap-1.5">
+        <button onclick="viewInvoiceModal(${p.PAYMENT_ID})" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold border border-blue-200 transition flex items-center gap-1 shadow-2xs">
+          <i class="fa-solid fa-file-invoice text-xs"></i> Invoice
+        </button>
+        <button onclick="deletePayment(${p.PAYMENT_ID})" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold border border-rose-200 transition">
           Delete
         </button>
       </td>
     </tr>
   `).join('');
+}
+
+
+function viewInvoiceModal(paymentId) {
+  const p = state.payments.find(x => Number(x.PAYMENT_ID) === Number(paymentId));
+  if (!p) return;
+  const b = state.bookings.find(x => Number(x.BOOKING_ID) === Number(p.BOOKING_ID)) || {};
+  const r = state.rooms.find(x => x.ROOM_NAME === p.ROOM_NAME) || {};
+
+  const total = Number(p.AMOUNT) || 0;
+  const base = total / 1.18;
+  const gst = total - base;
+
+  const invDisplay = document.getElementById('invoice-id-display');
+  if (invDisplay) invDisplay.textContent = 'INV-2026-' + p.PAYMENT_ID;
+  const bRef = document.getElementById('invoice-booking-ref');
+  if (bRef) bRef.textContent = '#BK-' + p.BOOKING_ID;
+  const dDisp = document.getElementById('invoice-date-display');
+  if (dDisp) dDisp.textContent = p.PAYMENT_DATE || new Date().toISOString().split('T')[0];
+  const mName = document.getElementById('invoice-member-name');
+  if (mName) mName.textContent = p.MEMBER_NAME || 'Registered Resident';
+  const mEmail = document.getElementById('invoice-member-email');
+  if (mEmail) mEmail.textContent = b.EMAIL || ((p.MEMBER_NAME || 'resident').toLowerCase().replace(/\s+/g, '.') + '@worksphere.io');
+  const orgName = document.getElementById('invoice-org-name');
+  if (orgName) orgName.textContent = b.ORG_NAME || 'WorkSphere Resident Network';
+  const rTitle = document.getElementById('invoice-room-title');
+  if (rTitle) rTitle.textContent = p.ROOM_NAME || 'Meeting Suite';
+  const rHub = document.getElementById('invoice-room-hub');
+  if (rHub) rHub.textContent = b.SPACE_NAME || r.SPACE_NAME || 'WorkSphere Campus Chennai';
+  const slotTime = document.getElementById('invoice-slot-time');
+  if (slotTime) slotTime.textContent = (b.BOOKING_DATE || '') + ' (' + (b.START_TIME || '10:00') + ' - ' + (b.END_TIME || '12:00') + ')';
+  const mMethod = document.getElementById('invoice-method-display');
+  if (mMethod) mMethod.textContent = p.PAYMENT_METHOD || p.METHOD || 'UPI (Instant)';
+  const bAmt = document.getElementById('invoice-base-amount');
+  if (bAmt) bAmt.textContent = '₹ ' + base.toFixed(2);
+  const gAmt = document.getElementById('invoice-gst-amount');
+  if (gAmt) gAmt.textContent = '₹ ' + gst.toFixed(2);
+  const tAmt = document.getElementById('invoice-total-amount');
+  if (tAmt) tAmt.textContent = '₹ ' + total.toFixed(2);
+
+  openModal('invoice-view-modal');
 }
 
 async function deletePayment(id) {
@@ -1065,26 +1109,30 @@ async function deletePayment(id) {
 // ====================================================================
 
 const PRESETS = {
-  rooms_and_spaces: `SELECT r.room_id, r.room_name, r.room_type, r.capacity, r.hourly_rate, s.name as space_name, s.city
+  rooms_and_spaces: `SELECT r.room_id, r.room_name, r.room_type, r.capacity, r.hourly_rate, s.space_name, s.city
 FROM MEETING_ROOMS r
 JOIN COWORKING_SPACES s ON r.space_id = s.space_id
 ORDER BY r.capacity DESC`,
 
-  active_bookings: `SELECT b.booking_id, m.first_name || ' ' || m.last_name as member, r.room_name, b.booking_date, b.start_time || ' - ' || b.end_time as slot, b.total_amount
+  active_bookings: `SELECT b.booking_id, p.first_name || ' ' || p.last_name as member_name, r.room_name, s.space_name, b.booking_date, b.start_time || ' - ' || b.end_time as slot, b.total_amount
 FROM BOOKINGS b
 JOIN MEMBERS m ON b.member_id = m.member_id
+JOIN PERSON p ON m.person_id = p.person_id
 JOIN MEETING_ROOMS r ON b.room_id = r.room_id
+JOIN COWORKING_SPACES s ON r.space_id = s.space_id
 WHERE b.status = 'CONFIRMED'
 ORDER BY b.booking_date ASC`,
 
-  revenue_by_room: `SELECT r.room_id, r.room_name, COUNT(b.booking_id) as total_bookings, NVL(SUM(b.total_amount), 0) as total_revenue
+  revenue_by_room: `SELECT r.room_id, r.room_name, s.space_name, COUNT(b.booking_id) as total_bookings, NVL(SUM(b.total_amount), 0) as total_revenue
 FROM MEETING_ROOMS r
+JOIN COWORKING_SPACES s ON r.space_id = s.space_id
 LEFT JOIN BOOKINGS b ON r.room_id = b.room_id AND b.status = 'CONFIRMED'
-GROUP BY r.room_id, r.room_name
+GROUP BY r.room_id, r.room_name, s.space_name
 ORDER BY total_revenue DESC`,
 
-  member_plans: `SELECT m.member_id, m.first_name || ' ' || m.last_name as member_name, m.email, p.plan_name, p.monthly_fee
+  member_plans: `SELECT m.member_id, pr.first_name || ' ' || pr.last_name as member_name, pr.email, p.plan_name, p.monthly_fee
 FROM MEMBERS m
+JOIN PERSON pr ON m.person_id = pr.person_id
 JOIN MEMBERSHIP_PLANS p ON m.plan_id = p.plan_id
 ORDER BY p.monthly_fee DESC`,
 
@@ -1093,13 +1141,119 @@ FROM ROOM_FACILITIES f
 JOIN MEETING_ROOMS r ON f.room_id = r.room_id
 ORDER BY r.room_name, f.facility_name`,
 
-  all_tables: `SELECT table_name, num_rows, status FROM user_tables ORDER BY table_name`
+  eer_hierarchy: `SELECT e.employee_id, pe.first_name || ' ' || pe.last_name as employee_name, e.job_title, e.salary, NVL(ps.first_name || ' ' || ps.last_name, 'TOP DIRECTOR') as supervised_by
+FROM EMPLOYEES e
+JOIN PERSON pe ON e.person_id = pe.person_id
+LEFT JOIN EMPLOYEES s ON e.supervisor_id = s.employee_id
+LEFT JOIN PERSON ps ON s.person_id = ps.person_id
+ORDER BY e.employee_id ASC`,
+
+  all_tables: `SELECT table_name, num_rows, status FROM user_tables ORDER BY table_name`,
+
+  partial_dependency_demo: `/* ====================================================================
+   VIVA DEMO 1: PARTIAL DEPENDENCY (1NF VIOLATION)
+   Table: DEMO_1NF_PARTIAL_DEP
+   Composite Primary Key: (room_id, facility_id)
+   VIOLATION: room_id -> (room_name, hourly_rate) depends on PART of PK!
+   Notice how room details repeat for room 301 below across facilities:
+   ==================================================================== */
+SELECT room_id, facility_id, room_name, hourly_rate, facility_name, quantity
+FROM DEMO_1NF_PARTIAL_DEP
+ORDER BY room_id, facility_id`,
+
+  transitive_dependency_demo: `/* ====================================================================
+   VIVA DEMO 2: TRANSITIVE DEPENDENCY (2NF VIOLATION)
+   Table: DEMO_2NF_TRANSITIVE_DEP
+   Primary Key: member_id (Satisfies 2NF)
+   VIOLATION: member_id -> plan_id -> (plan_name, monthly_fee, duration)
+   Non-key attribute (plan_id) determines other non-key attributes!
+   Notice how plan 203 repeats monthly_fee 35000 for multiple members:
+   ==================================================================== */
+SELECT member_id, member_name, email, plan_id, plan_name, monthly_fee, duration_months
+FROM DEMO_2NF_TRANSITIVE_DEP
+ORDER BY plan_id, member_id`,
+
+  normalized_proof: `/* ====================================================================
+   FINAL 3NF / BCNF FULLY NORMALIZED SCHEMA PROOF
+   Zero Partial & Zero Transitive Dependencies!
+   All entities decoupled & retrieved dynamically via Foreign Keys:
+   ==================================================================== */
+SELECT m.member_id, p.first_name || ' ' || p.last_name as member_name, 
+       pl.plan_name, pl.monthly_fee, 
+       r.room_name, r.hourly_rate, f.facility_name
+FROM MEMBERS m
+JOIN PERSON p ON m.person_id = p.person_id
+JOIN MEMBERSHIP_PLANS pl ON m.plan_id = pl.plan_id
+JOIN BOOKINGS b ON m.member_id = b.member_id
+JOIN MEETING_ROOMS r ON b.room_id = r.room_id
+JOIN ROOM_FACILITIES f ON r.room_id = f.room_id
+WHERE ROWNUM <= 10
+ORDER BY m.member_id`
+};
+
+const NORMALIZATION_EXPLANATIONS = {
+  partial_dependency_demo: {
+    title: "1NF Violation: Partial Dependency Demonstration",
+    iconBg: "bg-amber-100 text-amber-700",
+    icon: "fa-triangle-exclamation",
+    cardBorder: "bg-amber-50/70 border-amber-200 text-amber-950",
+    desc: "In table <code>DEMO_1NF_PARTIAL_DEP</code>, the primary key is composite: <code>(room_id, facility_id)</code>. Non-key attributes <code>room_name</code> and <code>hourly_rate</code> depend ONLY on <code>room_id</code> (a proper subset of the composite PK), violating 2NF and causing repetitive data anomalies.",
+    fds: [
+      "• (room_id, facility_id) → quantity  [Full Functional Dependency]",
+      "• room_id → (room_name, hourly_rate) [🚨 PARTIAL DEPENDENCY]",
+      "• facility_id → facility_name       [🚨 PARTIAL DEPENDENCY]"
+    ],
+    solution: "<strong>2NF Normalization Fix:</strong> Decomposed into <code>MEETING_ROOMS(room_id, ...)</code> and <code>ROOM_FACILITIES(facility_id, room_id, facility_name, quantity)</code>."
+  },
+  transitive_dependency_demo: {
+    title: "2NF Violation: Transitive Dependency Demonstration",
+    iconBg: "bg-purple-100 text-purple-700",
+    icon: "fa-code-branch",
+    cardBorder: "bg-purple-50/70 border-purple-200 text-purple-950",
+    desc: "In table <code>DEMO_2NF_TRANSITIVE_DEP</code>, the primary key is atomic: <code>member_id</code> (satisfies 2NF). However, <code>member_id → plan_id</code>, and <code>plan_id → (plan_name, monthly_fee)</code>. Non-key attribute <code>plan_id</code> determines other non-key attributes, creating a Transitive Dependency and update anomalies.",
+    fds: [
+      "• member_id → (member_name, email, plan_id)   [Direct Dependency]",
+      "• plan_id → (plan_name, monthly_fee, duration) [Non-Key determines Non-Key]",
+      "• 🚨 Transitive Path: member_id → plan_id → (plan_name, monthly_fee)"
+    ],
+    solution: "<strong>3NF Normalization Fix:</strong> Decomposed into <code>MEMBERS(member_id, person_id, plan_id, ...)</code> and <code>MEMBERSHIP_PLANS(plan_id, plan_name, monthly_fee, ...)</code>."
+  },
+  normalized_proof: {
+    title: "Final 3NF / BCNF Fully Normalized Schema Proof",
+    iconBg: "bg-emerald-100 text-emerald-700",
+    icon: "fa-circle-check",
+    cardBorder: "bg-emerald-50/70 border-emerald-200 text-emerald-950",
+    desc: "All partial dependencies and transitive dependencies have been removed. Every non-key attribute depends directly on candidate keys (Primary Keys). Data integrity is preserved across relations via Foreign Keys with zero update/deletion anomalies.",
+    fds: [
+      "• 1NF: All attribute values are strictly atomic.",
+      "• 2NF: No partial dependencies (all tables use single-attribute primary keys).",
+      "• 3NF & BCNF: No transitive dependencies (every determinant is a candidate key)."
+    ],
+    solution: "<strong>Status:</strong> Complies 100% with Third Normal Form (3NF) & Boyce-Codd Normal Form (BCNF)."
+  }
 };
 
 function loadPresetQuery(key) {
   const sql = PRESETS[key];
   if (sql) {
     document.getElementById('sql-input').value = sql;
+
+    // Check if there is an explanation card
+    const card = document.getElementById('normalization-viva-card');
+    const exp = NORMALIZATION_EXPLANATIONS[key];
+    if (card && exp) {
+      card.className = `mb-6 rounded-3xl p-5 border transition-all duration-300 ${exp.cardBorder}`;
+      document.getElementById('norm-card-icon').className = `h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 text-lg ${exp.iconBg}`;
+      document.getElementById('norm-card-icon').innerHTML = `<i class="fa-solid ${exp.icon}"></i>`;
+      document.getElementById('norm-card-title').textContent = exp.title;
+      document.getElementById('norm-card-desc').innerHTML = exp.desc;
+      document.getElementById('norm-card-fds').innerHTML = exp.fds.map(f => `<div>${f}</div>`).join('');
+      document.getElementById('norm-card-solution').innerHTML = exp.solution;
+      card.classList.remove('hidden');
+    } else if (card) {
+      card.classList.add('hidden');
+    }
+
     executeCustomQuery();
   }
 }
@@ -1195,4 +1349,215 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   refreshAllData();
+  resetHeroSlideTimer();
 });
+
+
+// ====================================================================
+// NEW HELPER FUNCTIONS FOR VISUAL HERO, HUBS, AND MANAGE SUB-TABS
+// ====================================================================
+
+// Hero Carousel Logic (Matching ZESTY Design)
+const HERO_SLIDES = [
+  {
+    kicker: "ALL IN ONE SOLUTION FOR YOU",
+    title: `Elevating Brands, Driving <br class="hidden sm:inline"><span class="text-white">Success</span>`,
+    desc: "Empowering Brands with Innovative Design, Cutting-Edge Technology, and Strategic Marketing to Drive Business Growth and Success.",
+    bg: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=2000&q=80",
+    ctaText: "View Portfolio",
+    ctaAction: () => switchTab('catalog')
+  },
+  {
+    kicker: "WELCOME TO WORKSPHERE",
+    title: `Crafting Brands for <br class="hidden sm:inline"><span class="text-white">Tomorrow</span>`,
+    desc: "Delivering Next-Gen Coworking Ecosystems, Premium Meeting Suites, and High-Speed Infrastructure for Modern Global Enterprises.",
+    bg: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=2000&q=80",
+    ctaText: "Explore Facilities",
+    ctaAction: () => switchTab('catalog')
+  },
+  {
+    kicker: "PREMIUM COWORKING & FLEX SPACES",
+    title: `Your Digital Journey <br class="hidden sm:inline"><span class="text-white">Starts With Us</span>`,
+    desc: "Experience Flexible Desk Plans, 4K Video Conferencing Hubs, and Instant Hourly Bookings with Real-Time Oracle Database Sync.",
+    bg: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=2000&q=80",
+    ctaText: "Book a Room",
+    ctaAction: () => switchTab('timeline')
+  }
+];
+
+let currentHeroSlide = 0;
+let heroSlideTimer = null;
+
+function setHeroSlide(index) {
+  if (index < 0 || index >= HERO_SLIDES.length) return;
+  currentHeroSlide = index;
+  const slide = HERO_SLIDES[index];
+
+  const bgEl = document.getElementById('hero-bg-image');
+  const kickerEl = document.getElementById('hero-kicker-text');
+  const titleEl = document.getElementById('hero-main-title');
+  const descEl = document.getElementById('hero-desc-text');
+  const ctaBtn = document.getElementById('hero-cta-btn');
+
+  if (bgEl) {
+    bgEl.style.opacity = '0.4';
+    setTimeout(() => {
+      bgEl.style.backgroundImage = `url('${slide.bg}')`;
+      bgEl.style.opacity = '1';
+    }, 200);
+  }
+
+  if (kickerEl) kickerEl.innerHTML = slide.kicker;
+  if (titleEl) titleEl.innerHTML = slide.title;
+  if (descEl) descEl.innerHTML = slide.desc;
+  if (ctaBtn) {
+    ctaBtn.textContent = slide.ctaText;
+    ctaBtn.onclick = slide.ctaAction;
+  }
+
+  // Update dots
+  const dots = document.querySelectorAll('.hero-dot');
+  dots.forEach((dot, i) => {
+    if (i === index) {
+      dot.className = 'hero-dot h-1.5 w-6 rounded-full bg-sky-400 cursor-pointer transition-all duration-300';
+    } else {
+      dot.className = 'hero-dot h-1.5 w-1.5 rounded-full bg-white/40 cursor-pointer hover:bg-white transition-all duration-300';
+    }
+  });
+
+  resetHeroSlideTimer();
+}
+
+function resetHeroSlideTimer() {
+  if (heroSlideTimer) clearInterval(heroSlideTimer);
+  heroSlideTimer = setInterval(() => {
+    const nextIdx = (currentHeroSlide + 1) % HERO_SLIDES.length;
+    setHeroSlide(nextIdx);
+  }, 7000);
+}
+
+function handleHeroSearch() {
+  const hub = document.getElementById('hero-hub-select')?.value || 'ALL';
+  const type = document.getElementById('hero-type-select')?.value || 'ALL';
+
+  const filterHub = document.getElementById('filter-hub');
+  if (filterHub && hub !== 'ALL') {
+    filterHub.value = hub;
+  }
+
+  filterRoomsByType(type);
+  switchTab('catalog');
+  applyRoomFilters();
+  window.scrollTo({ top: 350, behavior: 'smooth' });
+}
+
+function filterByCampus(campusName) {
+  const filterHub = document.getElementById('filter-hub');
+  if (filterHub) {
+    filterHub.value = campusName;
+  }
+  filterRoomsByType('ALL');
+  switchTab('catalog');
+  applyRoomFilters();
+  window.scrollTo({ top: 350, behavior: 'smooth' });
+}
+
+function switchManageSubTab(subTab) {
+  document.querySelectorAll('.manage-subtab-btn').forEach(btn => {
+    btn.classList.remove('active', 'bg-appspace-blue', 'text-white');
+    btn.classList.add('bg-slate-100', 'text-slate-700');
+  });
+
+  document.querySelectorAll('.manage-view').forEach(view => {
+    view.classList.add('hidden');
+  });
+
+  const activeBtn = document.getElementById('manage-subtab-btn-' + subTab);
+  if (activeBtn) {
+    activeBtn.classList.add('active', 'bg-appspace-blue', 'text-white');
+    activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
+  }
+
+  const activeView = document.getElementById('manage-' + subTab + '-view');
+  if (activeView) {
+    activeView.classList.remove('hidden');
+  }
+
+  if (subTab === 'rooms') {
+    renderManageRoomsTable();
+  } else if (subTab === 'employees') {
+    renderEmployeesTable();
+  }
+}
+
+function renderManageRoomsTable() {
+  const tbody = document.getElementById('manage-rooms-table-body');
+  if (!tbody) return;
+
+  const rooms = state.rooms || [];
+  if (rooms.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400">No rooms found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rooms.map(r => `
+    <tr class="hover:bg-blue-50/40 border-b border-slate-100 transition">
+      <td class="px-6 py-4 font-mono font-bold text-blue-600">#${r.ROOM_ID}</td>
+      <td class="px-6 py-4 font-bold text-slate-900">${r.ROOM_NAME}</td>
+      <td class="px-6 py-4 text-slate-600">${r.SPACE_NAME || '-'}</td>
+      <td class="px-6 py-4">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+          ${r.ROOM_TYPE}
+        </span>
+      </td>
+      <td class="px-6 py-4 font-bold text-slate-700">${r.CAPACITY} pax</td>
+      <td class="px-6 py-4 font-bold text-emerald-600 font-mono">₹${Number(r.HOURLY_RATE).toFixed(2)}/hr</td>
+      <td class="px-6 py-4">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${r.STATUS === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}">
+          ${r.STATUS}
+        </span>
+      </td>
+      <td class="px-6 py-4 text-right">
+        <div class="flex items-center justify-end gap-2">
+          <button onclick="openEditRoomModal(${r.ROOM_ID})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-semibold border border-amber-200 transition">
+            Update
+          </button>
+          <button onclick="deleteRoom(${r.ROOM_ID})" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-lg text-xs font-semibold border border-rose-200 transition">
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function renderEmployeesTable() {
+  const tbody = document.getElementById('manage-employees-table-body');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/employees');
+    const json = await res.json();
+    if (json.success && json.data) {
+      const emps = json.data;
+      if (emps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400">No employees registered.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = emps.map(e => `
+        <tr class="hover:bg-purple-50/40 border-b border-slate-100 transition">
+          <td class="px-6 py-4 font-mono font-bold text-purple-700">#${e.EMPLOYEE_ID}</td>
+          <td class="px-6 py-4 font-bold text-slate-900">${e.EMPLOYEE_NAME || (e.FIRST_NAME + ' ' + e.LAST_NAME)}</td>
+          <td class="px-6 py-4 font-medium text-slate-700">${e.JOB_TITLE}</td>
+          <td class="px-6 py-4 font-bold text-emerald-600 font-mono">₹${Number(e.SALARY).toFixed(2)}/mo</td>
+          <td class="px-6 py-4 font-semibold text-indigo-700">
+            ${e.SUPERVISOR_NAME ? '<i class="fa-solid fa-arrow-turn-up text-[10px] mr-1 text-slate-400"></i>' + e.SUPERVISOR_NAME : '<span class="text-xs text-slate-400 italic font-normal">Top Director (Root)</span>'}
+          </td>
+          <td class="px-6 py-4 font-mono text-xs text-slate-500">${e.EMAIL || '-'}</td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-rose-500">Failed to load employees: ${err.message}</td></tr>`;
+  }
+}

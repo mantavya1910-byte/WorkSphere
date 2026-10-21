@@ -18,6 +18,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/api/spaces', require('./routes/spaces'));
 app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api/members', require('./routes/members'));
+app.use('/api/employees', require('./routes/employees'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/query', require('./routes/query'));
@@ -30,6 +31,8 @@ app.get('/api/health', async (req, res) => {
     res.json({
       status: 'UP',
       database: 'Oracle Database 21c XE',
+      connectivity: 'JDBC (Oracle Type-4 Thin Driver)',
+      driver: 'ojdbc11.jar (Oracle JDBC Thin Driver)',
       container: test.rows[0]?.CON || 'XEPDB1',
       dbUser: test.rows[0]?.DB_USER || 'COWORKING_ADMIN',
       timestamp: new Date().toISOString()
@@ -47,8 +50,9 @@ app.get('*', (req, res) => {
 // Start Server
 app.listen(PORT, async () => {
   console.log(`=======================================================`);
-  console.log(`?? Co-working Space & Room Booking Server Running!`);
-  console.log(`?? Local URL: http://localhost:${PORT}`);
-  console.log(`???  Connected to: Oracle Database 21c XE (XEPDB1)`);
+  console.log(`🚀 WorkSphere Workspace & Room Booking Server Running!`);
+  console.log(`🌐 Local URL: http://localhost:${PORT}`);
+  console.log(`☕ Database Connectivity: Oracle JDBC Thin Driver (ojdbc11.jar)`);
+  console.log(`🏛️ Connected to: Oracle Database 21c XE (XEPDB1)`);
   console.log(`=======================================================`);
 });

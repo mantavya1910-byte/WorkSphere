@@ -81,14 +81,14 @@ BEGIN
 
     -- Insert Booking
     INSERT INTO BOOKINGS (
-        booking_id, member_id, room_id, org_id, booking_date, start_time, end_time, total_amount, status
+        booking_id, member_id, room_id, organization_id, booking_date, start_time, end_time, total_amount, status
     ) VALUES (
         v_b_id, p_member_id, p_room_id, p_org_id, p_booking_date, p_start_time, p_end_time, v_calc_amount, 'CONFIRMED'
     );
 
     -- Insert Payment
     INSERT INTO PAYMENTS (
-        payment_id, booking_id, amount, payment_date, payment_method, status
+        payment_id, booking_id, amount, payment_date, method, status
     ) VALUES (
         v_p_id, v_b_id, v_calc_amount, SYSDATE, p_payment_method, 'COMPLETED'
     );

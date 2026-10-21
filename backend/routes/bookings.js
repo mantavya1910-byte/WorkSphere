@@ -7,15 +7,16 @@ router.get('/', async (req, res) => {
   try {
     const sql = `
       SELECT b.booking_id, b.booking_date, b.start_time, b.end_time, b.total_amount, b.status,
-             m.member_id, m.first_name || ' ' || m.last_name as member_name, m.email,
+             m.member_id, pr.first_name || ' ' || pr.last_name as member_name, pr.email,
              r.room_id, r.room_name, r.hourly_rate,
-             s.name as space_name,
-             o.org_name
+             s.space_name,
+             o.organization_name as org_name
       FROM BOOKINGS b
       JOIN MEMBERS m ON b.member_id = m.member_id
+      JOIN PERSON pr ON m.person_id = pr.person_id
       JOIN MEETING_ROOMS r ON b.room_id = r.room_id
       JOIN COWORKING_SPACES s ON r.space_id = s.space_id
-      LEFT JOIN ORGANIZATIONS o ON b.org_id = o.org_id
+      LEFT JOIN ORGANIZATIONS o ON b.organization_id = o.organization_id
       ORDER BY b.booking_id DESC
     `;
     const result = await db.query(sql);
@@ -28,7 +29,9 @@ router.get('/', async (req, res) => {
 // POST create booking (Insert button)
 router.post('/', async (req, res) => {
   try {
-    const { member_id, room_id, org_id, booking_date, start_time, end_time, total_amount, payment_method } = req.body;
+    const { member_id, room_id, org_id, organization_id, booking_date, start_time, end_time, total_amount, payment_method, method } = req.body;
+    const orgId = organization_id || org_id;
+    const payMethod = method || payment_method;
 
     if (!member_id || !room_id || !booking_date || !start_time || !end_time) {
       return res.status(400).json({ success: false, error: 'Member, Room, Date, and Time slots are required!' });
@@ -37,12 +40,12 @@ router.post('/', async (req, res) => {
     // Attempt insert into BOOKINGS. If double booked, Oracle Trigger TRG_CHECK_ROOM_OVERLAP raises ORA-20001!
     const sql = `
       INSERT INTO BOOKINGS (
-        booking_id, member_id, room_id, org_id, booking_date, start_time, end_time, total_amount, status
+        booking_id, member_id, room_id, organization_id, booking_date, start_time, end_time, total_amount, status
       ) VALUES (
         SEQ_BOOKINGS.NEXTVAL,
         ${Number(member_id)},
         ${Number(room_id)},
-        ${org_id ? Number(org_id) : 'NULL'},
+        ${orgId ? Number(orgId) : 'NULL'},
         '${booking_date.replace(/'/g, "''")}',
         '${start_time.replace(/'/g, "''")}',
         '${end_time.replace(/'/g, "''")}',
@@ -53,15 +56,15 @@ router.post('/', async (req, res) => {
     await db.query(sql);
 
     // If payment method provided, create corresponding payment record
-    if (payment_method) {
+    if (payMethod) {
       const paySql = `
-        INSERT INTO PAYMENTS (payment_id, booking_id, amount, payment_date, payment_method, status)
+        INSERT INTO PAYMENTS (payment_id, booking_id, amount, payment_date, method, status)
         VALUES (
           SEQ_PAYMENTS.NEXTVAL,
           SEQ_BOOKINGS.CURRVAL,
           ${Number(total_amount || 0)},
           SYSDATE,
-          '${payment_method.replace(/'/g, "''")}',
+          '${payMethod.replace(/'/g, "''")}',
           'COMPLETED'
         )
       `;

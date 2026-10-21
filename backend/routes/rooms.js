@@ -6,7 +6,7 @@ const db = require('../../database/db');
 router.get('/', async (req, res) => {
   try {
     const roomsSql = `
-      SELECT r.room_id, r.space_id, r.room_name, r.room_type, r.capacity, r.hourly_rate, r.status, s.name as space_name, s.city
+      SELECT r.room_id, r.space_id, r.room_name, r.room_type, r.capacity, r.hourly_rate, r.status, s.space_name, s.space_name as space_name, s.city
       FROM MEETING_ROOMS r
       JOIN COWORKING_SPACES s ON r.space_id = s.space_id
       ORDER BY r.room_id ASC

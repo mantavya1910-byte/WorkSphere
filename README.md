@@ -20,12 +20,15 @@ Built with **Oracle Database 21c XE**, **SQL\*Plus**, **PL/SQL**, **Node.js (Exp
 The project strictly adheres to modular separation across three independent tiers:
 
 ```text
-dbms project/
-├── database/                   # Database Tier (Oracle DDL, PL/SQL, Seeds)
+WorkSphere/
+├── database/                   # Database Tier (Oracle DDL, PL/SQL, Seeds & JDBC)
 │   ├── schema_oracle.sql       # Relational Schema with PK, FK, and CHECK constraints
 │   ├── triggers_and_procedures.sql # PL/SQL Triggers, Procedures, and Functions
 │   ├── seed_oracle.sql         # Seed data (Chennai spaces, rooms, members, bookings)
-│   └── db.js                   # SQL*Plus bridge & query execution engine
+│   ├── db.js                   # Unified DB engine (Oracle JDBC Type-4 Thin & OCI Bridge)
+│   └── jdbc/                   # Java Database Connectivity (JDBC) Layer
+│       ├── WorkSphereJDBC.java # Java JDBC implementation (Connection, PreparedStatement, CallableStatement)
+│       └── ojdbc11.jar         # Official Oracle 21c JDBC Thin Driver
 ├── backend/                    # Application Server Tier (Node.js & Express)
 │   ├── server.js               # Express server entry point & static file server
 │   └── routes/
@@ -40,45 +43,169 @@ dbms project/
 │   ├── index.html              # Responsive dashboard, forms, tables & SQL terminal
 │   ├── css/style.css           # Custom layout styles & transitions
 │   └── js/app.js               # Dynamic DOM rendering, CRUD handlers & query console
-├── .gitignore                  # Git ignore rules
-├── package.json                # Project dependencies
+├── Run_JDBC_Demo.bat           # 1-Click launcher to demonstrate Java JDBC in terminal
+├── package.json                # Project dependencies & npm scripts (including npm run jdbc)
 └── README.md                   # Project documentation & evaluation guide
 ```
 
 ---
 
-## 🗄️ Relational Database Schema (Oracle 21c)
+## 🗄️ Enhanced Entity-Relationship (EER) Relational Schema (Oracle 21c)
+Faithful relational mapping of the design submitted by **Mantavya Sharma (25BCE5583)**.
 
-### 1. `COWORKING_SPACES`
-Represents physical co-working hubs (e.g., Guindy, OMR, Anna Nagar, T. Nagar).
-- `space_id` (NUMBER, PRIMARY KEY)
-- `name` (VARCHAR2(100), NOT NULL)
+```mermaid
+erDiagram
+    PERSON ||--o| MEMBER : "specializes into (d)"
+    PERSON ||--o| EMPLOYEE : "specializes into (d)"
+    EMPLOYEE ||--o{ EMPLOYEE : "supervises (1:N)"
+    
+    MEMBERSHIP_PLAN ||--o{ MEMBER : "has (1:N)"
+    MEMBER ||--o{ BOOKING : "makes (1:N)"
+    
+    COWORKING_SPACE ||--o{ MEETING_ROOM : "contains (1:N)"
+    MEETING_ROOM ||--|{ ROOM_FACILITY : "has_facility (Weak Entity)"
+    
+    ORGANIZATION ||--o{ BOOKING : "books_for (1:N)"
+    MEETING_ROOM ||--o{ BOOKING : "booked_in (1:N)"
+    BOOKING ||--o{ PAYMENT : "pays (1:N)"
+
+    PERSON {
+        number person_id PK
+        string first_name
+        string middle_name
+        string last_name
+        string email UK
+        string street
+        string city
+        string state
+        string pin
+        string phone
+    }
+
+    EMPLOYEE {
+        number employee_id PK
+        number person_id FK
+        string job_title
+        number salary
+        number supervisor_id FK
+    }
+
+    MEMBER {
+        number member_id PK
+        number person_id FK
+        number plan_id FK
+        date join_date
+        string status
+    }
+
+    MEMBERSHIP_PLAN {
+        number plan_id PK
+        string plan_name
+        number monthly_fee
+        number duration_months
+    }
+
+    COWORKING_SPACE {
+        number space_id PK
+        string space_name
+        string address
+        string city
+        string state
+        string pin
+    }
+
+    MEETING_ROOM {
+        number room_id PK
+        number space_id FK
+        string room_name
+        string room_type
+        number capacity
+        number hourly_rate
+        string status
+    }
+
+    ROOM_FACILITY {
+        number facility_id PK
+        number room_id FK
+        string facility_name
+        number quantity
+    }
+
+    ORGANIZATION {
+        number organization_id PK
+        string organization_name
+        string industry
+    }
+
+    BOOKING {
+        number booking_id PK
+        number member_id FK
+        number room_id FK
+        number organization_id FK
+        string booking_date
+        string start_time
+        string end_time
+        number total_amount
+        string status
+    }
+
+    PAYMENT {
+        number payment_id PK
+        number booking_id FK
+        number amount
+        date payment_date
+        string method
+        string status
+    }
+```
+
+### 1. `PERSON` (EER Superclass Entity)
+Root generalization table holding composite attributes for both Members and Employees:
+- `person_id` (NUMBER, PRIMARY KEY)
+- `first_name` (VARCHAR2(50), NOT NULL)
+- `middle_name` (VARCHAR2(50))
+- `last_name` (VARCHAR2(50), NOT NULL)
+- `email` (VARCHAR2(100), UNIQUE, NOT NULL)
 - `street` (VARCHAR2(150))
-- `city` (VARCHAR2(50), NOT NULL)
-- `state` (VARCHAR2(50))
+- `city` (VARCHAR2(50))
+- `state` (VARCHAR2(50), DEFAULT 'Tamil Nadu')
 - `pin` (VARCHAR2(10))
-- `created_at` (DATE)
+- `phone` (VARCHAR2(20))
 
-### 2. `MEMBERSHIP_PLANS`
-Subscription tiers for individuals and organizations.
+### 2. `EMPLOYEES` (EER Subclass Entity with Recursive 'Supervises' Hierarchy)
+Disjoint specialization representing workplace operational personnel:
+- `employee_id` (NUMBER, PRIMARY KEY)
+- `person_id` (NUMBER, UNIQUE, FOREIGN KEY -> `PERSON(person_id) ON DELETE CASCADE`)
+- `job_title` (VARCHAR2(100), NOT NULL)
+- `salary` (NUMBER(10,2), `CHECK (salary >= 0)`)
+- `supervisor_id` (NUMBER, RECURSIVE FOREIGN KEY -> `EMPLOYEES(employee_id) ON DELETE SET NULL`)
+
+### 3. `MEMBERS` (EER Subclass Entity)
+Disjoint specialization representing registered clients:
+- `member_id` (NUMBER, PRIMARY KEY)
+- `person_id` (NUMBER, UNIQUE, FOREIGN KEY -> `PERSON(person_id) ON DELETE CASCADE`)
+- `plan_id` (NUMBER, FOREIGN KEY -> `MEMBERSHIP_PLANS(plan_id) ON DELETE SET NULL`)
+- `join_date` (DATE)
+- `status` (VARCHAR2(20), `CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED'))`)
+
+### 4. `MEMBERSHIP_PLANS`
+Subscription tiers for individuals and organizations:
 - `plan_id` (NUMBER, PRIMARY KEY)
 - `plan_name` (VARCHAR2(50), NOT NULL)
 - `monthly_fee` (NUMBER(10,2), `CHECK (monthly_fee >= 0)`)
 - `duration_months` (NUMBER(3), `CHECK (duration_months > 0)`)
 
-### 3. `MEMBERS`
-Registered platform users.
-- `member_id` (NUMBER, PRIMARY KEY)
-- `first_name` (VARCHAR2(50), NOT NULL)
-- `last_name` (VARCHAR2(50), NOT NULL)
-- `email` (VARCHAR2(100), UNIQUE, NOT NULL)
-- `phone` (VARCHAR2(20))
-- `plan_id` (NUMBER, FOREIGN KEY -> `MEMBERSHIP_PLANS(plan_id) ON DELETE SET NULL`)
-- `join_date` (DATE)
-- `status` (VARCHAR2(20), `CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED'))`)
+### 5. `COWORKING_SPACES`
+Physical co-working hubs (Guindy, OMR, Anna Nagar, T. Nagar):
+- `space_id` (NUMBER, PRIMARY KEY)
+- `space_name` (VARCHAR2(100), NOT NULL)
+- `address` (VARCHAR2(150))
+- `city` (VARCHAR2(50), NOT NULL)
+- `state` (VARCHAR2(50))
+- `pin` (VARCHAR2(10))
 
-### 4. `MEETING_ROOMS`
-Individual bookable spaces within each hub.
+### 6. `MEETING_ROOMS`
+Individual bookable suites within hubs:
 - `room_id` (NUMBER, PRIMARY KEY)
 - `space_id` (NUMBER, FOREIGN KEY -> `COWORKING_SPACES(space_id) ON DELETE CASCADE`)
 - `room_name` (VARCHAR2(100), NOT NULL)
@@ -87,38 +214,38 @@ Individual bookable spaces within each hub.
 - `hourly_rate` (NUMBER(8,2), `CHECK (hourly_rate > 0)`)
 - `status` (VARCHAR2(20), `CHECK (status IN ('AVAILABLE', 'OCCUPIED', 'MAINTENANCE'))`)
 
-### 5. `ROOM_FACILITIES`
-Hardware amenities present in rooms (Weak entity).
+### 7. `ROOM_FACILITIES` (Weak Entity)
+Hardware amenities dependent on meeting rooms (Identifying relationship: `Has_Facility`):
 - `facility_id` (NUMBER, PRIMARY KEY)
 - `room_id` (NUMBER, FOREIGN KEY -> `MEETING_ROOMS(room_id) ON DELETE CASCADE`)
 - `facility_name` (VARCHAR2(100), NOT NULL)
 - `quantity` (NUMBER(3), `CHECK (quantity > 0)`)
 
-### 6. `ORGANIZATIONS`
-Corporate clients booking for groups.
-- `org_id` (NUMBER, PRIMARY KEY)
-- `org_name` (VARCHAR2(100), NOT NULL)
+### 8. `ORGANIZATIONS`
+Corporate clients booking rooms:
+- `organization_id` (NUMBER, PRIMARY KEY)
+- `organization_name` (VARCHAR2(100), NOT NULL)
 - `industry` (VARCHAR2(50))
 
-### 7. `BOOKINGS`
-Meeting room reservations.
+### 9. `BOOKINGS`
+Meeting room reservations:
 - `booking_id` (NUMBER, PRIMARY KEY)
 - `member_id` (NUMBER, FOREIGN KEY -> `MEMBERS(member_id) ON DELETE CASCADE`)
 - `room_id` (NUMBER, FOREIGN KEY -> `MEETING_ROOMS(room_id) ON DELETE CASCADE`)
-- `org_id` (NUMBER, FOREIGN KEY -> `ORGANIZATIONS(org_id) ON DELETE SET NULL`)
+- `organization_id` (NUMBER, FOREIGN KEY -> `ORGANIZATIONS(organization_id) ON DELETE SET NULL`)
 - `booking_date` (VARCHAR2(20), NOT NULL)
 - `start_time` (VARCHAR2(10), NOT NULL)
 - `end_time` (VARCHAR2(10), NOT NULL)
 - `total_amount` (NUMBER(10,2), `CHECK (total_amount >= 0)`)
 - `status` (VARCHAR2(20), `CHECK (status IN ('CONFIRMED', 'CANCELLED', 'COMPLETED'))`)
 
-### 8. `PAYMENTS`
-Invoices and transaction settlement.
+### 10. `PAYMENTS`
+Invoices and transaction settlements:
 - `payment_id` (NUMBER, PRIMARY KEY)
 - `booking_id` (NUMBER, FOREIGN KEY -> `BOOKINGS(booking_id) ON DELETE CASCADE`)
 - `amount` (NUMBER(10,2), `CHECK (amount > 0)`)
 - `payment_date` (DATE)
-- `payment_method` (VARCHAR2(30), `CHECK (payment_method IN ('UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'Corporate Account', 'Cash'))`)
+- `method` (VARCHAR2(30), `CHECK (method IN ('UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'Corporate Account', 'Cash'))`)
 - `status` (VARCHAR2(20), `CHECK (status IN ('COMPLETED', 'PENDING', 'FAILED'))`)
 
 ---
@@ -165,13 +292,46 @@ Wraps room booking and payment generation into an atomic database transaction.
 
 ---
 
+## ☕ Java Database Connectivity (JDBC) Implementation
+The project implements enterprise **Java Database Connectivity (JDBC)** using the official Oracle Type-4 Thin Driver (`ojdbc11.jar`) to communicate directly with Oracle Database 21c XE on port `1521` (Container: `XEPDB1`).
+
+### 1. Connection Parameters
+* **Driver Class:** `oracle.jdbc.OracleDriver`
+* **Connection URL:** `jdbc:oracle:thin:@localhost:1521/XEPDB1`
+* **Schema / User:** `COWORKING_ADMIN`
+* **Driver Archive:** `database/jdbc/ojdbc11.jar`
+* **Source Implementation:** [`database/jdbc/WorkSphereJDBC.java`](file:///C:/Users/manta/OneDrive/Desktop/WorkSphere/WorkSphere/database/jdbc/WorkSphereJDBC.java)
+
+### 2. Core JDBC Standards Implemented & Evaluated
+1. **`java.sql.DriverManager` & `Connection`**: Establishes live TCP/IP socket connection to Oracle Pluggable Database `XEPDB1`.
+2. **`java.sql.Statement` & `ResultSet`**: Executes relational multi-table `JOIN` queries and processes rows dynamically.
+3. **`java.sql.PreparedStatement`**: Parameterized, SQL-injection safe CRUD operations:
+   * **INSERT**: Adds rooms and members using sequence-driven generated keys.
+   * **UPDATE**: Dynamically alters room pricing, status, and capacities.
+   * **DELETE**: Deletes records with cascading foreign key integrity.
+4. **`java.sql.CallableStatement`**: Invokes the PL/SQL Stored Procedure `SP_CREATE_BOOKING_AND_PAY` with `IN` and `OUT` parameters for atomic transactions.
+5. **ACID Transaction Management**: Manual transaction demarcation with `commit()` and `rollback()` inside catch blocks.
+
+### 3. How to Demonstrate JDBC to Faculty
+* **Method 1 (1-Click Launcher):** Double-click [`Run_JDBC_Demo.bat`](file:///C:/Users/manta/OneDrive/Desktop/WorkSphere/WorkSphere/Run_JDBC_Demo.bat) in the project root.
+* **Method 2 (Terminal Command):**
+  ```powershell
+  npm run jdbc
+  ```
+  *or*
+  ```powershell
+  java -cp ".;database/jdbc/ojdbc11.jar" database.jdbc.WorkSphereJDBC
+  ```
+
+---
+
 ## 🎯 DA-II Rubric Alignment
 
 | Evaluation Module | Rubric Requirement | Project Implementation |
 |---|---|---|
 | **M-1: Backend & Constraints** | Key database operations & field constraints | 8 normalized tables, Primary Keys, Foreign Keys with Cascade rules, explicit `CHECK`, `UNIQUE`, and `NOT NULL` constraints. |
 | **M-2: Frontend Input Forms** | Form input fields mapped dynamically | Form modals for Members, Rooms, and Bookings; zero hardcoding; dynamic dropdowns populated from Oracle DB. |
-| **M-3: Database Connectivity & CRUD** | Connection via ODBC / JDBC / Driver with Insert, Update, and Delete action buttons | Node.js to Oracle 21c (SQL\*Plus bridge) with real-time **Insert (Add)**, **Update**, and **Delete** buttons that sync the database and UI instantly. |
+| **M-3: Database Connectivity & CRUD** | Connection via ODBC / JDBC / Driver with Insert, Update, and Delete action buttons | **Oracle JDBC Type-4 Thin Driver (`ojdbc11.jar`)** with real-time **Insert (Add)**, **Update**, and **Delete** buttons synced between the database and UI with transaction commits. |
 | **Special Feature** | "Type query and fetch it" | Integrated **Interactive SQL Console** allowing arbitrary `SELECT`, `JOIN`, and `GROUP BY` execution with instant tabular rendering. |
 
 ---
@@ -253,14 +413,31 @@ GROUP BY r.room_id, r.room_name
 ORDER BY total_revenue DESC;
 ```
 
-### 3. Active Bookings with Member Contact Details
+### 4. EER Generalization/Specialization Query (PERSON -> MEMBERS -> MEMBERSHIP_PLANS)
 ```sql
-SELECT b.booking_id, m.first_name || ' ' || m.last_name as member, m.email, r.room_name, b.booking_date, b.start_time || ' - ' || b.end_time as slot, b.total_amount
-FROM BOOKINGS b
-JOIN MEMBERS m ON b.member_id = m.member_id
-JOIN MEETING_ROOMS r ON b.room_id = r.room_id
-WHERE b.status = 'CONFIRMED'
-ORDER BY b.booking_date ASC;
+SELECT m.member_id, p.first_name || ' ' || p.last_name AS member_name, 
+       p.email, p.city, pl.plan_name, pl.monthly_fee, m.status
+FROM MEMBERS m
+JOIN PERSON p ON m.person_id = p.person_id
+LEFT JOIN MEMBERSHIP_PLANS pl ON m.plan_id = pl.plan_id
+ORDER BY m.member_id ASC;
+```
+
+### 5. EER Recursive Self-Join Query (EMPLOYEES Supervises Hierarchy)
+Demonstrates the 1:N recursive relationship from the EER diagram:
+```sql
+SELECT 
+    e.employee_id, 
+    pe.first_name || ' ' || pe.last_name AS employee_name,
+    e.job_title,
+    e.salary,
+    NVL(ps.first_name || ' ' || ps.last_name, 'TOP-LEVEL DIRECTOR') AS supervisor_name,
+    NVL(s.job_title, 'EXECUTIVE BOARD') AS supervisor_title
+FROM EMPLOYEES e
+JOIN PERSON pe ON e.person_id = pe.person_id
+LEFT JOIN EMPLOYEES s ON e.supervisor_id = s.employee_id
+LEFT JOIN PERSON ps ON s.person_id = ps.person_id
+ORDER BY e.supervisor_id NULLS FIRST, e.employee_id ASC;
 ```
 
 ---

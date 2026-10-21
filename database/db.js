@@ -1,4 +1,11 @@
 const { exec } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+
+// ====================================================================
+// WorkSphere Database Connectivity Layer: Oracle JDBC & Native Drivers
+// ====================================================================
 
 function parseCSVLine(line) {
   const result = [];
@@ -24,7 +31,44 @@ function parseCSVLine(line) {
   return result.map(s => s.trim());
 }
 
-function query(sql) {
+// 1. Primary Driver: Oracle JDBC Thin Driver (Type 4) via WorkSphereJDBC
+function queryJdbc(sql) {
+  return new Promise((resolve, reject) => {
+    const projectRoot = path.resolve(__dirname, '..');
+    const cp = `.;database/jdbc/ojdbc11.jar`;
+    const cmd = `java -cp "${cp}" database.jdbc.WorkSphereJDBC --stdin`;
+
+    const child = exec(cmd, { cwd: projectRoot, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
+      if (err) {
+        return reject(new Error(stderr || err.message));
+      }
+
+      const output = (stdout || '').trim();
+      try {
+        const cleanJson = output.replace(/\r?\n/g, ' ');
+        const parsed = JSON.parse(cleanJson);
+        if (parsed.success === false) {
+          return reject(new Error(parsed.error || 'JDBC Query Execution Failed'));
+        }
+        return resolve({
+          driver: 'JDBC (Oracle Type-4 Thin Driver)',
+          columns: parsed.columns || [],
+          rows: parsed.rows || [],
+          rowCount: parsed.rowCount !== undefined ? parsed.rowCount : (parsed.affectedRows || 0),
+          raw: output
+        });
+      } catch (parseErr) {
+        return reject(new Error('JDBC parse error: ' + output));
+      }
+    });
+
+    child.stdin.write(sql);
+    child.stdin.end();
+  });
+}
+
+// 2. Fallback Driver: Native SQL*Plus OCI Bridge
+function queryNative(sql) {
   return new Promise((resolve, reject) => {
     const cleanSql = sql.trim().replace(/;+$/, '');
     const isSelect = /^\s*SELECT/i.test(cleanSql);
@@ -49,7 +93,6 @@ function query(sql) {
 
       const output = (stdout || '').trim();
 
-      // Check for Oracle Errors
       if (output.includes('ORA-') || output.includes('SP2-')) {
         const errMatch = output.match(/(?:ORA|SP2)-\d+:[^\r\n]+/);
         const errMsg = errMatch ? errMatch[0] : output;
@@ -57,21 +100,14 @@ function query(sql) {
       }
 
       if (!isSelect) {
-        return resolve({ success: true, message: 'Command executed successfully', raw: output });
+        return resolve({ driver: 'Native OCI', success: true, message: 'Command executed successfully', raw: output });
       }
 
-      // Parse CSV output
       const rawLines = output.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      
-      // Filter out session altered and blank lines
-      const csvLines = rawLines.filter(l => {
-        if (l.startsWith('Session altered.')) return false;
-        if (l.startsWith('Commit complete.')) return false;
-        return true;
-      });
+      const csvLines = rawLines.filter(l => !l.startsWith('Session altered.') && !l.startsWith('Commit complete.'));
 
       if (csvLines.length === 0) {
-        return resolve({ columns: [], rows: [], rowCount: 0 });
+        return resolve({ driver: 'Native OCI', columns: [], rows: [], rowCount: 0 });
       }
 
       const headers = parseCSVLine(csvLines[0]);
@@ -89,6 +125,7 @@ function query(sql) {
       }
 
       resolve({
+        driver: 'Native OCI',
         columns: headers,
         rows: rows,
         rowCount: rows.length
@@ -100,4 +137,14 @@ function query(sql) {
   });
 }
 
-module.exports = { query };
+// Export unified query function (defaults to JDBC with fallback)
+async function query(sql) {
+  try {
+    return await queryJdbc(sql);
+  } catch (jdbcErr) {
+    console.warn('[DB Bridge] JDBC attempt failed, falling back to Native OCI:', jdbcErr.message);
+    return await queryNative(sql);
+  }
+}
+
+module.exports = { query, queryJdbc, queryNative };
