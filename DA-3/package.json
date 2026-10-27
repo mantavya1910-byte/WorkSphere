@@ -1,0 +1,28 @@
+{
+  "name": "worksphere-booking-system",
+  "version": "1.0.0",
+  "description": "WorkSphere - Meeting Room & Workspace Scheduling Platform (DBMS Project with Oracle SQL, PL/SQL & Dynamic CRUD Frontend)",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "seed-graph": "node database/seed_graph.js",
+    "demo-graph": "node database/graph_demo_cli.js",
+    "init-db": "node database/init_oracle.js",
+    "jdbc": "java -cp \".;database/jdbc/ojdbc11.jar\" database.jdbc.WorkSphereJDBC"
+  },
+  "keywords": [
+    "dbms",
+    "oracle",
+    "sqlplus",
+    "plsql",
+    "worksphere",
+    "booking-system"
+  ],
+  "author": "WorkSphere Team",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "neo4j-driver": "^6.2.0"
+  }
+}

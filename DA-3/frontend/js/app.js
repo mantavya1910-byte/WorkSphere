@@ -61,6 +61,10 @@ function switchTab(tabId) {
   if (tabId === 'timeline') {
     renderTimelineGrid();
   }
+  // If switching to modern graph database, render topology and stats
+  if (tabId === 'graph') {
+    initOrRefreshGraph();
+  }
 }
 
 function openModal(id) {
@@ -1559,5 +1563,770 @@ async function renderEmployeesTable() {
     }
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-rose-500">Failed to load employees: ${err.message}</td></tr>`;
+  }
+}
+
+// ====================================================================
+// MODERN DATABASE EXTENSION: NEO4J PROPERTY GRAPH ENGINE
+// ====================================================================
+
+let graphState = {
+  rawNodes: [],
+  rawEdges: [],
+  renderedNodes: [],
+  renderedEdges: [],
+  selectedNode: null,
+  activeFilter: 'ALL',
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  isDragging: false,
+  dragTarget: null,
+  animId: null
+};
+
+// Preset Cypher Queries for Faculty Evaluation
+const CYPHER_PRESETS = {
+  recommendation: {
+    title: 'Collaborative Room Recommendation',
+    cypher: `MATCH (m:Member {id: 1001})-[:BELONGS_TO]->(o:Organization)<-[:BELONGS_TO]-(peer:Member)-[:BOOKED]->(r:MeetingRoom)
+RETURN r.name, count(*) AS score ORDER BY score DESC;`
+  },
+  hierarchy: {
+    title: 'Recursive Employee Hierarchy Traversal',
+    cypher: `MATCH path = (e:Employee {id: 9005})-[:REPORTS_TO*1..4]->(top:Employee)
+RETURN e.name, top.name, length(path) AS depth;`
+  },
+  facilities: {
+    title: 'Room-to-Facility Hardware Co-Occurrence',
+    cypher: `MATCH (r:MeetingRoom)-[:EQUIPPED_WITH]->(f:Facility)
+RETURN r.name, r.capacity, f.name;`
+  },
+  shortest_path: {
+    title: 'Shortest Path Discovery (Bidirectional BFS)',
+    cypher: `MATCH path = shortestPath((m1:Member {id: 1001})-[*]-(m2:Member {id: 1007}))
+RETURN path;`
+  },
+  centrality: {
+    title: 'Degree Centrality & Hub Identification',
+    cypher: `MATCH (n)
+RETURN labels(n)[0] AS type, n.name AS name, count{(n)--()} AS degree ORDER BY degree DESC LIMIT 10;`
+  },
+  spaces_and_rooms: {
+    title: 'All Coworking Spaces & Contained Rooms',
+    cypher: `MATCH (s:CoworkingSpace)-[:CONTAINS]->(r:MeetingRoom)
+RETURN s.name, r.name, r.room_type, r.capacity;`
+  }
+};
+
+async function initOrRefreshGraph() {
+  await Promise.all([
+    loadGraphOverview(),
+    fetchGraphTopology(graphState.activeFilter)
+  ]);
+  setupGraphCanvas();
+}
+
+async function loadGraphOverview() {
+  try {
+    const res = await fetch('/api/graph/overview');
+    const json = await res.json();
+    if (json.success && json.stats) {
+      const elNodes = document.getElementById('graph-stat-nodes');
+      const elEdges = document.getElementById('graph-stat-edges');
+      const elEngine = document.getElementById('graph-stat-engine');
+
+      if (elNodes) elNodes.textContent = json.stats.totalNodes;
+      if (elEdges) elEdges.textContent = json.stats.totalRelationships;
+      if (elEngine) elEngine.textContent = json.technology || 'Property Graph Engine';
+    }
+  } catch (err) {
+    console.error('Failed to load graph overview:', err);
+  }
+}
+
+async function fetchGraphTopology(filter = 'ALL') {
+  try {
+    const url = filter && filter !== 'ALL' ? `/api/graph/visualize?label=${filter}` : '/api/graph/visualize';
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.success) {
+      graphState.rawNodes = json.nodes || [];
+      graphState.rawEdges = json.edges || [];
+      layoutGraphNodes();
+      updateCanvasNodeCountLabel();
+    }
+  } catch (err) {
+    console.error('Failed to fetch graph topology:', err);
+  }
+}
+
+function updateCanvasNodeCountLabel() {
+  const lbl = document.getElementById('canvas-node-count-label');
+  if (lbl) {
+    lbl.textContent = `Rendered: ${graphState.renderedNodes.length} nodes • ${graphState.renderedEdges.length} relationships`;
+  }
+}
+
+function filterGraphVisualizer(category) {
+  graphState.activeFilter = category;
+  document.querySelectorAll('.graph-filter-btn').forEach(btn => {
+    btn.classList.remove('bg-slate-900', 'text-white');
+    btn.classList.add('bg-slate-100', 'text-slate-700');
+  });
+
+  const activeBtn = document.getElementById(`filter-btn-${category}`);
+  if (activeBtn) {
+    activeBtn.classList.add('bg-slate-900', 'text-white');
+    activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
+  }
+
+  fetchGraphTopology(category).then(() => {
+    resetGraphPhysics();
+  });
+}
+
+// Layout physics initialization
+function layoutGraphNodes() {
+  const canvas = document.getElementById('graph-canvas');
+  if (!canvas) return;
+
+  const w = canvas.clientWidth || 800;
+  const h = canvas.clientHeight || 520;
+
+  // Initialize node positions in a circular organic cluster
+  const count = graphState.rawNodes.length;
+  const radius = Math.min(w, h) * 0.35;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  const nodeMap = new Map();
+
+  graphState.renderedNodes = graphState.rawNodes.map((n, idx) => {
+    const angle = (idx / count) * 2 * Math.PI;
+    const r = radius * (0.6 + Math.random() * 0.8);
+    const nodeObj = {
+      ...n,
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      radius: Math.min(24, Math.max(12, 10 + (n.degree || 1) * 2))
+    };
+    nodeMap.set(n.id, nodeObj);
+    return nodeObj;
+  });
+
+  graphState.renderedEdges = graphState.rawEdges.map(e => ({
+    ...e,
+    sourceNode: nodeMap.get(e.source),
+    targetNode: nodeMap.get(e.target)
+  })).filter(e => e.sourceNode && e.targetNode);
+}
+
+// Canvas Force Physics Simulation & Rendering
+function setupGraphCanvas() {
+  const canvas = document.getElementById('graph-canvas');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+
+  // Mouse interaction
+  let dragNode = null;
+  let isPanning = false;
+  let startX = 0, startY = 0;
+
+  canvas.onmousedown = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left - graphState.panX) / graphState.zoom;
+    const mouseY = (e.clientY - rect.top - graphState.panY) / graphState.zoom;
+
+    // Find clicked node
+    for (let i = graphState.renderedNodes.length - 1; i >= 0; i--) {
+      const node = graphState.renderedNodes[i];
+      const dx = mouseX - node.x;
+      const dy = mouseY - node.y;
+      if (Math.hypot(dx, dy) <= node.radius + 4) {
+        dragNode = node;
+        node.isDragging = true;
+        selectGraphNode(node);
+        return;
+      }
+    }
+
+    // Otherwise panning
+    isPanning = true;
+    startX = e.clientX - graphState.panX;
+    startY = e.clientY - graphState.panY;
+  };
+
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left - graphState.panX) / graphState.zoom;
+    const mouseY = (e.clientY - rect.top - graphState.panY) / graphState.zoom;
+
+    if (dragNode) {
+      dragNode.x = mouseX;
+      dragNode.y = mouseY;
+      dragNode.vx = 0;
+      dragNode.vy = 0;
+      return;
+    }
+
+    if (isPanning) {
+      graphState.panX = e.clientX - startX;
+      graphState.panY = e.clientY - startY;
+      return;
+    }
+
+    // Hover cursor check
+    let hovering = false;
+    for (const node of graphState.renderedNodes) {
+      const dx = mouseX - node.x;
+      const dy = mouseY - node.y;
+      if (Math.hypot(dx, dy) <= node.radius + 4) {
+        hovering = true;
+        break;
+      }
+    }
+    canvas.style.cursor = hovering ? 'pointer' : (isPanning ? 'grabbing' : 'grab');
+  };
+
+  window.addEventListener('mouseup', () => {
+    if (dragNode) {
+      dragNode.isDragging = false;
+      dragNode = null;
+    }
+    isPanning = false;
+  });
+
+  canvas.onwheel = (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    zoomGraph(zoomFactor);
+  };
+
+  // Run Physics Simulation Loop
+  if (graphState.animId) cancelAnimationFrame(graphState.animId);
+
+  let stepCount = 0;
+  function animate() {
+    simulateForces();
+    renderGraph(ctx, canvas);
+    graphState.animId = requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function simulateForces() {
+  const nodes = graphState.renderedNodes;
+  const edges = graphState.renderedEdges;
+  const kRepel = 2400;
+  const kSpring = 0.04;
+  const restLength = 90;
+  const damping = 0.88;
+
+  // 1. Repulsion between all node pairs
+  for (let i = 0; i < nodes.length; i++) {
+    const n1 = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++) {
+      const n2 = nodes[j];
+      const dx = n2.x - n1.x;
+      const dy = n2.y - n1.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      if (dist < 350) {
+        const force = kRepel / (dist * dist);
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        if (!n1.isDragging) { n1.vx -= fx; n1.vy -= fy; }
+        if (!n2.isDragging) { n2.vx += fx; n2.vy += fy; }
+      }
+    }
+  }
+
+  // 2. Spring attraction along connected edges (Index-Free Adjacency)
+  for (const edge of edges) {
+    const n1 = edge.sourceNode;
+    const n2 = edge.targetNode;
+    if (!n1 || !n2) continue;
+
+    const dx = n2.x - n1.x;
+    const dy = n2.y - n1.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const delta = dist - restLength;
+    const force = delta * kSpring;
+    const fx = (dx / dist) * force;
+    const fy = (dy / dist) * force;
+
+    if (!n1.isDragging) { n1.vx += fx; n1.vy += fy; }
+    if (!n2.isDragging) { n2.vx -= fx; n2.vy -= fy; }
+  }
+
+  // 3. Center gravity pull & apply damping
+  const canvas = document.getElementById('graph-canvas');
+  const cx = (canvas?.clientWidth || 800) / 2;
+  const cy = (canvas?.clientHeight || 520) / 2;
+
+  for (const n of nodes) {
+    if (!n.isDragging) {
+      n.vx += (cx - n.x) * 0.003;
+      n.vy += (cy - n.y) * 0.003;
+      n.vx *= damping;
+      n.vy *= damping;
+      n.x += n.vx;
+      n.y += n.vy;
+    }
+  }
+}
+
+function renderGraph(ctx, canvas) {
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+
+  ctx.save();
+  ctx.clearRect(0, 0, w, h);
+
+  // Background subtle grid
+  ctx.translate(graphState.panX, graphState.panY);
+  ctx.scale(graphState.zoom, graphState.zoom);
+
+  const selected = graphState.selectedNode;
+  const neighborIds = new Set();
+  if (selected) {
+    neighborIds.add(selected.id);
+    graphState.renderedEdges.forEach(e => {
+      if (e.source === selected.id) neighborIds.add(e.target);
+      if (e.target === selected.id) neighborIds.add(e.source);
+    });
+  }
+
+  // 1. Draw Edges
+  for (const edge of graphState.renderedEdges) {
+    const n1 = edge.sourceNode;
+    const n2 = edge.targetNode;
+    if (!n1 || !n2) continue;
+
+    const isHighlight = selected && (neighborIds.has(n1.id) && neighborIds.has(n2.id));
+    const isDimmed = selected && !isHighlight;
+
+    ctx.beginPath();
+    ctx.moveTo(n1.x, n1.y);
+    ctx.lineTo(n2.x, n2.y);
+    ctx.strokeStyle = isHighlight ? '#38bdf8' : (isDimmed ? 'rgba(71, 85, 105, 0.25)' : 'rgba(100, 116, 139, 0.45)');
+    ctx.lineWidth = isHighlight ? 2.5 : 1.2;
+    ctx.stroke();
+
+    // Draw tiny direction arrow at 65% mark along edge
+    const arrowPos = 0.65;
+    const ax = n1.x + (n2.x - n1.x) * arrowPos;
+    const ay = n1.y + (n2.y - n1.y) * arrowPos;
+    const angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
+
+    ctx.save();
+    ctx.translate(ax, ay);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-6, -3.5);
+    ctx.lineTo(-6, 3.5);
+    ctx.closePath();
+    ctx.fillStyle = isHighlight ? '#38bdf8' : (isDimmed ? 'rgba(71, 85, 105, 0.3)' : 'rgba(148, 163, 184, 0.7)');
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 2. Draw Nodes
+  for (const node of graphState.renderedNodes) {
+    const isSelected = selected && selected.id === node.id;
+    const isConnected = selected && neighborIds.has(node.id);
+    const isDimmed = selected && !isConnected;
+
+    ctx.save();
+    ctx.globalAlpha = isDimmed ? 0.3 : 1.0;
+
+    // Outer glow if selected
+    if (isSelected) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius + 8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
+    // Node body circle
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+    ctx.fillStyle = node.color || '#0284c7';
+    ctx.fill();
+    ctx.strokeStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = isSelected ? 3 : 1.5;
+    ctx.stroke();
+
+    // Node label text
+    ctx.font = '600 10px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    const cleanLabel = (node.label || '').length > 18 ? (node.label.slice(0, 16) + '…') : node.label;
+    
+    // Text background pill for contrast
+    const textWidth = ctx.measureText(cleanLabel).width;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+    ctx.fillRect(node.x - textWidth / 2 - 3, node.y + node.radius + 3, textWidth + 6, 14);
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillText(cleanLabel, node.x, node.y + node.radius + 5);
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function zoomGraph(factor) {
+  graphState.zoom = Math.max(0.4, Math.min(3.0, graphState.zoom * factor));
+}
+
+function resetGraphPhysics() {
+  const canvas = document.getElementById('graph-canvas');
+  if (!canvas) return;
+  graphState.panX = 0;
+  graphState.panY = 0;
+  graphState.zoom = 1;
+
+  for (const n of graphState.renderedNodes) {
+    n.vx = (Math.random() - 0.5) * 8;
+    n.vy = (Math.random() - 0.5) * 8;
+  }
+}
+
+function selectGraphNode(node) {
+  graphState.selectedNode = node;
+  const inspectorBadge = document.getElementById('inspector-badge');
+  const inspectorContent = document.getElementById('inspector-content');
+  const inspectorActions = document.getElementById('inspector-actions');
+
+  if (inspectorBadge) {
+    inspectorBadge.textContent = `:${node.category} #${node.id}`;
+    inspectorBadge.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-100 text-sky-800';
+  }
+
+  if (inspectorContent) {
+    const props = node.properties || {};
+    const propRows = Object.entries(props).map(([k, v]) => `
+      <div class="flex justify-between py-1 border-b border-slate-100">
+        <span class="font-mono text-slate-500">${k}:</span>
+        <span class="font-bold text-slate-800 font-mono text-right truncate max-w-[150px]">${typeof v === 'object' ? JSON.stringify(v) : v}</span>
+      </div>
+    `).join('');
+
+    // Connected edges summary
+    const connectedEdges = graphState.rawEdges.filter(e => e.source === node.id || e.target === node.id);
+
+    inspectorContent.innerHTML = `
+      <div class="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs mb-2">
+        <div class="text-xs font-black text-slate-900">${node.label}</div>
+        <div class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Type: :${node.category}</div>
+      </div>
+      <div class="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Properties (LPG Attributes)</div>
+        ${propRows}
+      </div>
+      <div class="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Index-Free Adjacency Pointers (${connectedEdges.length})</div>
+        <div class="space-y-1 max-h-32 overflow-y-auto font-mono text-[11px]">
+          ${connectedEdges.slice(0, 8).map(e => `
+            <div class="text-slate-600 truncate">
+              ${e.source === node.id ? `<span class="text-sky-600">-[:${e.type}]-></span> Node #${e.target}` : `<span class="text-emerald-600"><-[:${e.type}]-</span> Node #${e.source}`}
+            </div>
+          `).join('')}
+          ${connectedEdges.length > 8 ? `<div class="text-[10px] text-slate-400 italic">+${connectedEdges.length - 8} more relationships...</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  if (inspectorActions) inspectorActions.classList.remove('hidden');
+}
+
+// Cypher Query Execution & Terminal Handlers
+function loadCypherPreset(presetKey) {
+  const preset = CYPHER_PRESETS[presetKey];
+  if (!preset) return;
+
+  const input = document.getElementById('cypher-input');
+  if (input) {
+    input.value = preset.cypher.trim();
+  }
+  executeCypherInput();
+}
+
+async function executeCypherInput() {
+  const input = document.getElementById('cypher-input');
+  const cypher = (input?.value || '').trim();
+  if (!cypher) {
+    showToast('Please enter a Cypher query string', 'error');
+    return;
+  }
+
+  const timingBadge = document.getElementById('cypher-timing-badge');
+  const timingText = document.getElementById('cypher-timing-text');
+  const container = document.getElementById('cypher-result-container');
+  const thead = document.getElementById('cypher-table-head');
+  const tbody = document.getElementById('cypher-table-body');
+
+  try {
+    const res = await fetch('/api/graph/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cypher })
+    });
+
+    const json = await res.json();
+
+    if (!json.success) {
+      showToast(json.error || 'Cypher query execution error', 'error');
+      return;
+    }
+
+    if (timingBadge && timingText) {
+      timingBadge.classList.remove('hidden');
+      timingText.textContent = `⚡ Executed in ${json.executionTimeMs} ms • ${json.rowCount} rows returned`;
+    }
+
+    // Render results in table
+    if (container && thead && tbody) {
+      container.classList.remove('hidden');
+
+      const cols = json.columns || [];
+      const rows = json.rows || [];
+
+      if (cols.length === 0 || rows.length === 0) {
+        thead.innerHTML = '<tr><th class="px-4 py-3">Result</th></tr>';
+        tbody.innerHTML = '<tr><td class="px-4 py-6 text-center text-slate-400">Query executed successfully. 0 records matched pattern.</td></tr>';
+        return;
+      }
+
+      thead.innerHTML = `<tr>${cols.map(c => `<th class="px-4 py-2.5 font-bold">${c}</th>`).join('')}</tr>`;
+      tbody.innerHTML = rows.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          ${cols.map(c => `<td class="px-4 py-2.5 font-medium text-slate-800">${typeof r[c] === 'object' ? JSON.stringify(r[c]) : r[c]}</td>`).join('')}
+        </tr>
+      `).join('');
+    }
+
+    showToast(`Cypher executed successfully in ${json.executionTimeMs} ms!`);
+  } catch (err) {
+    showToast(`Cypher query failed: ${err.message}`, 'error');
+  }
+}
+
+// Graph CRUD Controls
+function switchGraphCrudTab(tab) {
+  const panelNode = document.getElementById('crud-panel-node');
+  const panelEdge = document.getElementById('crud-panel-edge');
+  const tabNode = document.getElementById('crud-tab-node');
+  const tabEdge = document.getElementById('crud-tab-edge');
+
+  if (tab === 'node') {
+    panelNode?.classList.remove('hidden');
+    panelEdge?.classList.add('hidden');
+    tabNode?.classList.add('border-indigo-600', 'text-indigo-600');
+    tabNode?.classList.remove('border-transparent', 'text-slate-500');
+    tabEdge?.classList.remove('border-indigo-600', 'text-indigo-600');
+    tabEdge?.classList.add('border-transparent', 'text-slate-500');
+  } else {
+    panelNode?.classList.add('hidden');
+    panelEdge?.classList.remove('hidden');
+    tabEdge?.classList.add('border-indigo-600', 'text-indigo-600');
+    tabEdge?.classList.remove('border-transparent', 'text-slate-500');
+    tabNode?.classList.remove('border-indigo-600', 'text-indigo-600');
+    tabNode?.classList.add('border-transparent', 'text-slate-500');
+  }
+}
+
+async function submitCreateNode() {
+  const label = document.getElementById('crud-node-label')?.value || 'MeetingRoom';
+  const name = document.getElementById('crud-node-name')?.value.trim();
+  const rawProps = document.getElementById('crud-node-props')?.value.trim();
+
+  if (!name) {
+    showToast('Entity name is required!', 'error');
+    return;
+  }
+
+  const properties = { name };
+  if (rawProps) {
+    rawProps.split(',').forEach(pair => {
+      const [k, v] = pair.split('=').map(s => s.trim());
+      if (k && v !== undefined) properties[k] = isNaN(Number(v)) ? v : Number(v);
+    });
+  }
+
+  try {
+    const res = await fetch('/api/graph/nodes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ labels: [label], properties })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast(`Node :${label} "${name}" created successfully!`);
+      document.getElementById('crud-node-name').value = '';
+      document.getElementById('crud-node-props').value = '';
+      initOrRefreshGraph();
+    } else {
+      showToast(json.error || 'Failed to create node', 'error');
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function submitCreateEdge() {
+  const startId = document.getElementById('crud-edge-start')?.value;
+  const endId = document.getElementById('crud-edge-end')?.value;
+  const type = document.getElementById('crud-edge-type')?.value;
+  const rawProps = document.getElementById('crud-edge-props')?.value.trim();
+
+  if (!startId || !endId || !type) {
+    showToast('Source Node ID, Target Node ID, and Relationship Type are required', 'error');
+    return;
+  }
+
+  const properties = {};
+  if (rawProps) {
+    rawProps.split(',').forEach(pair => {
+      const [k, v] = pair.split('=').map(s => s.trim());
+      if (k && v !== undefined) properties[k] = isNaN(Number(v)) ? v : Number(v);
+    });
+  }
+
+  try {
+    const res = await fetch('/api/graph/relationships', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ startNodeId: startId, endNodeId: endId, type, properties })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast(`Relationship -[:${type}]-> established!`);
+      document.getElementById('crud-edge-start').value = '';
+      document.getElementById('crud-edge-end').value = '';
+      initOrRefreshGraph();
+    } else {
+      showToast(json.error || 'Failed to create relationship', 'error');
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteInspectedNode() {
+  if (!graphState.selectedNode) return;
+  const targetId = graphState.selectedNode.id;
+
+  if (!confirm(`Are you sure you want to detach and delete Node #${targetId} (${graphState.selectedNode.label})?`)) return;
+
+  try {
+    const res = await fetch(`/api/graph/nodes/${targetId}?detach=true`, { method: 'DELETE' });
+    const json = await res.json();
+    if (json.success) {
+      showToast(`Node #${targetId} detached and deleted successfully!`);
+      graphState.selectedNode = null;
+      document.getElementById('inspector-actions')?.classList.add('hidden');
+      document.getElementById('inspector-badge').textContent = 'None';
+      document.getElementById('inspector-content').innerHTML = `
+        <div class="text-center py-12 text-slate-400">
+          <i class="fa-solid fa-hand-pointer text-2xl mb-2 block text-slate-300"></i>
+          <span>Click any node in the canvas to inspect its properties.</span>
+        </div>
+      `;
+      initOrRefreshGraph();
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function runNeighborhoodQueryFromInspector() {
+  if (!graphState.selectedNode) return;
+  const targetId = graphState.selectedNode.id;
+  const cypher = `MATCH (n {id: ${targetId}})-[r]-(m) RETURN labels(n)[0] AS source_type, n.name AS source, type(r) AS relationship, labels(m)[0] AS target_type, m.name AS target;`;
+  
+  const input = document.getElementById('cypher-input');
+  if (input) input.value = cypher;
+  executeCypherInput();
+}
+
+// Side-by-Side Real-Time Benchmark
+async function runLiveBenchmark() {
+  showToast('Running live comparative benchmark across Relational and Graph engines...');
+  try {
+    const res = await fetch('/api/graph/benchmark', { method: 'POST' });
+    const json = await res.json();
+    if (json.success && json.benchmark) {
+      const bm = json.benchmark;
+      const elRdbmsTime = document.getElementById('bm-rdbms-time');
+      const elGraphTime = document.getElementById('bm-graph-time');
+      const elSpeedup = document.getElementById('bm-speedup-text');
+
+      if (elRdbmsTime) elRdbmsTime.textContent = `${bm.relational.executionTimeMs} ms`;
+      if (elGraphTime) elGraphTime.textContent = `${bm.graph.executionTimeMs} ms`;
+      if (elSpeedup) elSpeedup.textContent = `${bm.speedupFactor} Faster Execution`;
+
+      showToast(`Benchmark complete! Graph is ${bm.speedupFactor} faster with 0 JOINs.`);
+    }
+  } catch (err) {
+    showToast(`Benchmark failed: ${err.message}`, 'error');
+  }
+}
+
+// Reset / Seed Dataset
+async function seedGraphDataset() {
+  if (!confirm('Reset and re-seed the graph database with 60+ nodes and 120+ relationships?')) return;
+
+  try {
+    const res = await fetch('/api/graph/seed', { method: 'POST' });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Graph successfully seeded with 60+ nodes and 120+ relationships!');
+      initOrRefreshGraph();
+    }
+  } catch (err) {
+    showToast(`Seed failed: ${err.message}`, 'error');
+  }
+}
+
+// Export Graph Data
+function exportGraphData(format = 'cql') {
+  if (format === 'cql') {
+    const cql = `// WorkSphere Neo4j Cypher Export
+MATCH (n) DETACH DELETE n;
+${graphState.rawNodes.map(n => `CREATE (:${n.category} ${JSON.stringify(n.properties)})`).join(';\n')};
+${graphState.rawEdges.map(e => `MATCH (a {id: ${e.source}}), (b {id: ${e.target}}) CREATE (a)-[:${e.type} ${JSON.stringify(e.properties || {})}]->(b)`).join(';\n')};`;
+
+    const blob = new Blob([cql], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'worksphere_graph_export.cql';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Exported worksphere_graph_export.cql successfully!');
   }
 }

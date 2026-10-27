@@ -1,0 +1,1953 @@
+{
+  "nodeSeq": 15000,
+  "edgeSeq": 55000,
+  "nodes": [
+    {
+      "id": 101,
+      "labels": [
+        "CoworkingSpace"
+      ],
+      "properties": {
+        "id": 101,
+        "name": "Nexus WorkHub - Guindy",
+        "address": "No 45, Guindy Industrial Estate",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pin": "600032",
+        "total_desks": 180,
+        "metro_proximity": "300m from Guindy Metro"
+      }
+    },
+    {
+      "id": 102,
+      "labels": [
+        "CoworkingSpace"
+      ],
+      "properties": {
+        "id": 102,
+        "name": "Innovate Hub - OMR IT Expressway",
+        "address": "Plot 12, Rajiv Gandhi Salai, Sholinganallur",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pin": "600119",
+        "total_desks": 320,
+        "metro_proximity": "Near OMR Toll Plaza"
+      }
+    },
+    {
+      "id": 103,
+      "labels": [
+        "CoworkingSpace"
+      ],
+      "properties": {
+        "id": 103,
+        "name": "Synergy Spaces - Anna Nagar",
+        "address": "2nd Avenue, Block AB, Anna Nagar West",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pin": "600040",
+        "total_desks": 150,
+        "metro_proximity": "500m from Tower Metro"
+      }
+    },
+    {
+      "id": 104,
+      "labels": [
+        "CoworkingSpace"
+      ],
+      "properties": {
+        "id": 104,
+        "name": "Venture Loft - T. Nagar",
+        "address": "77 Venkatanarayana Road, T. Nagar",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pin": "600017",
+        "total_desks": 210,
+        "metro_proximity": "Near Panagal Park"
+      }
+    },
+    {
+      "id": 105,
+      "labels": [
+        "CoworkingSpace"
+      ],
+      "properties": {
+        "id": 105,
+        "name": "CyberHub Innovation Campus",
+        "address": "EPIP Zone, Whitefield",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "pin": "560066",
+        "total_desks": 450,
+        "metro_proximity": "200m from ITPL Metro"
+      }
+    },
+    {
+      "id": 106,
+      "labels": [
+        "CoworkingSpace"
+      ],
+      "properties": {
+        "id": 106,
+        "name": "Zenith Tech Lounge - Koramangala",
+        "address": "80 Feet Road, 4th Block, Koramangala",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "pin": "560034",
+        "total_desks": 260,
+        "metro_proximity": "Near Sony World Signal"
+      }
+    },
+    {
+      "id": 201,
+      "labels": [
+        "MembershipPlan"
+      ],
+      "properties": {
+        "id": 201,
+        "name": "Flexible Day Pass",
+        "monthly_fee": 2500,
+        "duration_months": 1,
+        "meeting_room_credits": 2
+      }
+    },
+    {
+      "id": 202,
+      "labels": [
+        "MembershipPlan"
+      ],
+      "properties": {
+        "id": 202,
+        "name": "Dedicated Resident Desk",
+        "monthly_fee": 8500,
+        "duration_months": 3,
+        "meeting_room_credits": 10
+      }
+    },
+    {
+      "id": 203,
+      "labels": [
+        "MembershipPlan"
+      ],
+      "properties": {
+        "id": 203,
+        "name": "Startup Team Pod",
+        "monthly_fee": 22000,
+        "duration_months": 6,
+        "meeting_room_credits": 30
+      }
+    },
+    {
+      "id": 204,
+      "labels": [
+        "MembershipPlan"
+      ],
+      "properties": {
+        "id": 204,
+        "name": "Enterprise Executive Plan",
+        "monthly_fee": 45000,
+        "duration_months": 12,
+        "meeting_room_credits": 80
+      }
+    },
+    {
+      "id": 501,
+      "labels": [
+        "Organization"
+      ],
+      "properties": {
+        "id": 501,
+        "name": "Quantix AI Labs",
+        "industry": "Artificial Intelligence & Deep Learning",
+        "tier": "Enterprise Plus",
+        "team_size": 45
+      }
+    },
+    {
+      "id": 502,
+      "labels": [
+        "Organization"
+      ],
+      "properties": {
+        "id": 502,
+        "name": "FinTech Matrix India",
+        "industry": "Banking, Algorithmic Trading & Payments",
+        "tier": "Enterprise Plus",
+        "team_size": 80
+      }
+    },
+    {
+      "id": 503,
+      "labels": [
+        "Organization"
+      ],
+      "properties": {
+        "id": 503,
+        "name": "CloudScale Solutions",
+        "industry": "Cloud Native DevOps & Kubernetes Infra",
+        "tier": "ScaleUp",
+        "team_size": 25
+      }
+    },
+    {
+      "id": 504,
+      "labels": [
+        "Organization"
+      ],
+      "properties": {
+        "id": 504,
+        "name": "BioGenix Diagnostics",
+        "industry": "Healthcare Informatics & Genomics",
+        "tier": "Enterprise",
+        "team_size": 35
+      }
+    },
+    {
+      "id": 505,
+      "labels": [
+        "Organization"
+      ],
+      "properties": {
+        "id": 505,
+        "name": "Aether Robotics Pvt Ltd",
+        "industry": "Autonomous Systems & Drone Telemetry",
+        "tier": "ScaleUp",
+        "team_size": 20
+      }
+    },
+    {
+      "id": 506,
+      "labels": [
+        "Organization"
+      ],
+      "properties": {
+        "id": 506,
+        "name": "Cyberdyne Systems India",
+        "industry": "Cybersecurity, SIEM & Threat Intel",
+        "tier": "Enterprise",
+        "team_size": 50
+      }
+    },
+    {
+      "id": 301,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 301,
+        "name": "Kaveri Conference Suite",
+        "room_type": "Conference Room",
+        "capacity": 16,
+        "hourly_rate": 1200,
+        "status": "AVAILABLE",
+        "floor": 2
+      }
+    },
+    {
+      "id": 302,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 302,
+        "name": "Vaigai Brainstorm Pod",
+        "room_type": "Meeting Pod",
+        "capacity": 4,
+        "hourly_rate": 450,
+        "status": "AVAILABLE",
+        "floor": 1
+      }
+    },
+    {
+      "id": 303,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 303,
+        "name": "Guindy Executive Boardroom",
+        "room_type": "Boardroom Elite",
+        "capacity": 20,
+        "hourly_rate": 2200,
+        "status": "AVAILABLE",
+        "floor": 3
+      }
+    },
+    {
+      "id": 304,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 304,
+        "name": "Guindy Hot Desk Lounge",
+        "room_type": "Hot Desk Lounge",
+        "capacity": 12,
+        "hourly_rate": 250,
+        "status": "AVAILABLE",
+        "floor": 1
+      }
+    },
+    {
+      "id": 305,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 305,
+        "name": "Silicon Boardroom Elite",
+        "room_type": "Boardroom Elite",
+        "capacity": 24,
+        "hourly_rate": 2500,
+        "status": "AVAILABLE",
+        "floor": 4
+      }
+    },
+    {
+      "id": 306,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 306,
+        "name": "Innovation Lounge Desks",
+        "room_type": "Hot Desk Lounge",
+        "capacity": 10,
+        "hourly_rate": 300,
+        "status": "AVAILABLE",
+        "floor": 2
+      }
+    },
+    {
+      "id": 307,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 307,
+        "name": "Cyber Sprint Pod",
+        "room_type": "Meeting Pod",
+        "capacity": 6,
+        "hourly_rate": 550,
+        "status": "AVAILABLE",
+        "floor": 3
+      }
+    },
+    {
+      "id": 308,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 308,
+        "name": "OMR Cloud Training Suite",
+        "room_type": "Training Hall",
+        "capacity": 45,
+        "hourly_rate": 3800,
+        "status": "AVAILABLE",
+        "floor": 5
+      }
+    },
+    {
+      "id": 309,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 309,
+        "name": "Marina Training Hall",
+        "room_type": "Training Hall",
+        "capacity": 40,
+        "hourly_rate": 3500,
+        "status": "AVAILABLE",
+        "floor": 2
+      }
+    },
+    {
+      "id": 310,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 310,
+        "name": "Anna Nagar Creative Suite",
+        "room_type": "Conference Room",
+        "capacity": 14,
+        "hourly_rate": 1100,
+        "status": "AVAILABLE",
+        "floor": 3
+      }
+    },
+    {
+      "id": 311,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 311,
+        "name": "Quiet Acoustic Focus Pod",
+        "room_type": "Meeting Pod",
+        "capacity": 2,
+        "hourly_rate": 350,
+        "status": "AVAILABLE",
+        "floor": 1
+      }
+    },
+    {
+      "id": 312,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 312,
+        "name": "Zenith Discussion Room",
+        "room_type": "Conference Room",
+        "capacity": 8,
+        "hourly_rate": 850,
+        "status": "AVAILABLE",
+        "floor": 2
+      }
+    },
+    {
+      "id": 313,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 313,
+        "name": "Royal Coromandel Boardroom",
+        "room_type": "Boardroom Elite",
+        "capacity": 18,
+        "hourly_rate": 2100,
+        "status": "AVAILABLE",
+        "floor": 4
+      }
+    },
+    {
+      "id": 314,
+      "labels": [
+        "MeetingRoom"
+      ],
+      "properties": {
+        "id": 314,
+        "name": "T. Nagar Media & Podcasting Pod",
+        "room_type": "Podcast Studio",
+        "capacity": 4,
+        "hourly_rate": 600,
+        "status": "AVAILABLE",
+        "floor": 1
+      }
+    },
+    {
+      "id": 401,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 401,
+        "name": "Sony 4K HDR Smart Display 75-inch",
+        "category": "Display",
+        "specs": "Ultra-HD with Apple AirPlay & Miracast"
+      }
+    },
+    {
+      "id": 402,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 402,
+        "name": "Polycom Studio Video Bar & Mic Array",
+        "category": "AV & Video Conferencing",
+        "specs": "AI Auto-framing with noise suppression"
+      }
+    },
+    {
+      "id": 403,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 403,
+        "name": "Magnetic Glass Whiteboard",
+        "category": "Collaboration Hardware",
+        "specs": "8x4 ft dual-sided tempered glass"
+      }
+    },
+    {
+      "id": 404,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 404,
+        "name": "Ultra-wide Curved Monitor 34-inch",
+        "category": "Display",
+        "specs": "144Hz IPS USB-C 90W Power Delivery"
+      }
+    },
+    {
+      "id": 405,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 405,
+        "name": "Acoustic Soundproofing Enclosure",
+        "category": "Environment",
+        "specs": "Class-A NRC 0.85 acoustic panelling"
+      }
+    },
+    {
+      "id": 406,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 406,
+        "name": "Dual 85-inch Touch Collaboration Screens",
+        "category": "Interactive Display",
+        "specs": "Multi-touch digital whiteboard & Zoom Rooms"
+      }
+    },
+    {
+      "id": 407,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 407,
+        "name": "Cisco TelePresence Dual Camera System",
+        "category": "AV Enterprise",
+        "specs": "Full Room tracking with speaker recognition"
+      }
+    },
+    {
+      "id": 408,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 408,
+        "name": "Ergonomic Mesh Seating & Power Hubs",
+        "category": "Furniture",
+        "specs": "Herman Miller Aeron chairs with AC sockets"
+      }
+    },
+    {
+      "id": 409,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 409,
+        "name": "Quad 4K Multi-Presenter Displays",
+        "category": "Display",
+        "specs": "4x 55-inch synchronized status monitors"
+      }
+    },
+    {
+      "id": 410,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 410,
+        "name": "Bose Ceiling Array Microphone System",
+        "category": "Audio",
+        "specs": "Steerable beam microphone coverage"
+      }
+    },
+    {
+      "id": 411,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 411,
+        "name": "Gigabit Ethernet & Fast Wireless Charging",
+        "category": "Network",
+        "specs": "Dedicated 10Gbps enterprise uplink"
+      }
+    },
+    {
+      "id": 412,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 412,
+        "name": "Smart Digital Whiteboard 65-inch",
+        "category": "Interactive Display",
+        "specs": "Cloud real-time sync with Google Drive"
+      }
+    },
+    {
+      "id": 413,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 413,
+        "name": "Epson Laser 4K Projector & 150-inch Screen",
+        "category": "Projection",
+        "specs": "6000 ANSI Lumens high-contrast screen"
+      }
+    },
+    {
+      "id": 414,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 414,
+        "name": "Laser Projector with 150-inch Motorized Screen",
+        "category": "Projection",
+        "specs": "Motorized drop-down tensioned screen"
+      }
+    },
+    {
+      "id": 415,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 415,
+        "name": "Wireless Handheld Mic & JBL Audio Suite",
+        "category": "Audio",
+        "specs": "Dual Shure UHF wireless microphones"
+      }
+    },
+    {
+      "id": 416,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 416,
+        "name": "Samsung 65-inch 4K Video Conference Screen",
+        "category": "Display",
+        "specs": "Integrated webOS video codec"
+      }
+    },
+    {
+      "id": 417,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 417,
+        "name": "Framery Soundproof Acoustic Glass Booth",
+        "category": "Pod",
+        "specs": "Class-leading 32dB speech level reduction"
+      }
+    },
+    {
+      "id": 418,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 418,
+        "name": "Logitech Rally Plus Ultra-HD Video System",
+        "category": "AV & Video Conferencing",
+        "specs": "Modular audio & RightSight auto-director"
+      }
+    },
+    {
+      "id": 419,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 419,
+        "name": "Executive Leather Seating & 85-inch 4K Display",
+        "category": "Luxury Furniture",
+        "specs": "Italian leather reclining executive chairs"
+      }
+    },
+    {
+      "id": 420,
+      "labels": [
+        "Facility"
+      ],
+      "properties": {
+        "id": 420,
+        "name": "Rodecaster Pro Podcast Audio Console & 4 Mics",
+        "category": "Audio Production",
+        "specs": "Broadcast-quality multitrack USB recorder"
+      }
+    },
+    {
+      "id": 1001,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1001,
+        "name": "Arjun Mehta",
+        "email": "arjun.mehta@worksphere.io",
+        "phone": "+91 9876543210",
+        "city": "Chennai",
+        "tier": "Gold"
+      }
+    },
+    {
+      "id": 1002,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1002,
+        "name": "Aditya Rao",
+        "email": "aditya.rao@quantixai.com",
+        "phone": "+91 9840123456",
+        "city": "Chennai",
+        "tier": "Platinum"
+      }
+    },
+    {
+      "id": 1003,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1003,
+        "name": "Sneha Iyer",
+        "email": "sneha.iyer@fintechmatrix.in",
+        "phone": "+91 9884112233",
+        "city": "Chennai",
+        "tier": "VIP Enterprise"
+      }
+    },
+    {
+      "id": 1004,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1004,
+        "name": "Rahul Verma",
+        "email": "rahul.verma@cloudscale.io",
+        "phone": "+91 9791098765",
+        "city": "Chennai",
+        "tier": "Silver"
+      }
+    },
+    {
+      "id": 1005,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1005,
+        "name": "Pooja Nair",
+        "email": "pooja.nair@biogenix.org",
+        "phone": "+91 9444055667",
+        "city": "Chennai",
+        "tier": "Platinum"
+      }
+    },
+    {
+      "id": 1006,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1006,
+        "name": "Siddharth Raman",
+        "email": "siddharth.r@aetherrobotics.com",
+        "phone": "+91 9884019283",
+        "city": "Chennai",
+        "tier": "Enterprise"
+      }
+    },
+    {
+      "id": 1007,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1007,
+        "name": "Tanvi M. Sundaram",
+        "email": "tanvi.m@fintechmatrix.in",
+        "phone": "+91 9790112244",
+        "city": "Chennai",
+        "tier": "Gold"
+      }
+    },
+    {
+      "id": 1008,
+      "labels": [
+        "Member"
+      ],
+      "properties": {
+        "id": 1008,
+        "name": "Harish Moorthy",
+        "email": "harish.km@quantixai.com",
+        "phone": "+91 9445123987",
+        "city": "Chennai",
+        "tier": "Silver"
+      }
+    },
+    {
+      "id": 9001,
+      "labels": [
+        "Employee"
+      ],
+      "properties": {
+        "id": 9001,
+        "name": "Vikram Chandran Venkatesh",
+        "role": "Regional Operations Director",
+        "email": "vikram.v@worksphere.in",
+        "salary": 125000,
+        "department": "Executive Management"
+      }
+    },
+    {
+      "id": 9002,
+      "labels": [
+        "Employee"
+      ],
+      "properties": {
+        "id": 9002,
+        "name": "Ananya Subramanian",
+        "role": "Guindy Hub Community Manager",
+        "email": "ananya.s@worksphere.in",
+        "salary": 75000,
+        "department": "Hub Operations"
+      }
+    },
+    {
+      "id": 9003,
+      "labels": [
+        "Employee"
+      ],
+      "properties": {
+        "id": 9003,
+        "name": "Karthik B. Narayanan",
+        "role": "OMR IT Hub Community Manager",
+        "email": "karthik.n@worksphere.in",
+        "salary": 78000,
+        "department": "Hub Operations"
+      }
+    },
+    {
+      "id": 9004,
+      "labels": [
+        "Employee"
+      ],
+      "properties": {
+        "id": 9004,
+        "name": "Deepika Sundaram",
+        "role": "Lead AV & Network Infrastructure Engineer",
+        "email": "deepika.s@worksphere.in",
+        "salary": 68000,
+        "department": "IT & Facilities"
+      }
+    },
+    {
+      "id": 9005,
+      "labels": [
+        "Employee"
+      ],
+      "properties": {
+        "id": 9005,
+        "name": "Manoj K. Pillai",
+        "role": "Guest Experience & Front Desk Host",
+        "email": "manoj.p@worksphere.in",
+        "salary": 42000,
+        "department": "Front Desk Hospitality"
+      }
+    },
+    {
+      "id": 9006,
+      "labels": [
+        "Employee"
+      ],
+      "properties": {
+        "id": 9006,
+        "name": "Priya L. Natarajan",
+        "role": "T. Nagar Experience & Booking Lead",
+        "email": "priya.n@worksphere.in",
+        "salary": 45000,
+        "department": "Front Desk Hospitality"
+      }
+    },
+    {
+      "id": 5001,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5001,
+        "booking_date": "2026-10-23",
+        "start_time": "10:00",
+        "end_time": "12:00",
+        "amount": 2400,
+        "status": "CONFIRMED",
+        "purpose": "Board Strategy Review"
+      }
+    },
+    {
+      "id": 5002,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5002,
+        "booking_date": "2026-10-23",
+        "start_time": "14:00",
+        "end_time": "16:00",
+        "amount": 2400,
+        "status": "CONFIRMED",
+        "purpose": "Q3 Financial Audit"
+      }
+    },
+    {
+      "id": 5003,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5003,
+        "booking_date": "2026-10-23",
+        "start_time": "09:00",
+        "end_time": "11:00",
+        "amount": 900,
+        "status": "CONFIRMED",
+        "purpose": "AI Model Sprint Standup"
+      }
+    },
+    {
+      "id": 5004,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5004,
+        "booking_date": "2026-10-23",
+        "start_time": "15:00",
+        "end_time": "17:00",
+        "amount": 900,
+        "status": "CONFIRMED",
+        "purpose": "Kubernetes Cluster Planning"
+      }
+    },
+    {
+      "id": 5005,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5005,
+        "booking_date": "2026-10-23",
+        "start_time": "11:00",
+        "end_time": "13:00",
+        "amount": 4400,
+        "status": "CONFIRMED",
+        "purpose": "Robotics Telemetry Demo"
+      }
+    },
+    {
+      "id": 5006,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5006,
+        "booking_date": "2026-10-23",
+        "start_time": "14:00",
+        "end_time": "17:00",
+        "amount": 7500,
+        "status": "CONFIRMED",
+        "purpose": "Hedge Fund Portfolio Allocation"
+      }
+    },
+    {
+      "id": 5007,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5007,
+        "booking_date": "2026-10-23",
+        "start_time": "10:00",
+        "end_time": "13:00",
+        "amount": 900,
+        "status": "CONFIRMED",
+        "purpose": "UX Design Wireframe Testing"
+      }
+    },
+    {
+      "id": 5008,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5008,
+        "booking_date": "2026-10-23",
+        "start_time": "13:00",
+        "end_time": "16:00",
+        "amount": 10500,
+        "status": "CONFIRMED",
+        "purpose": "Genomic Sequencing Workshop"
+      }
+    },
+    {
+      "id": 5009,
+      "labels": [
+        "Booking"
+      ],
+      "properties": {
+        "id": 5009,
+        "booking_date": "2026-10-23",
+        "start_time": "09:00",
+        "end_time": "11:00",
+        "amount": 1700,
+        "status": "CONFIRMED",
+        "purpose": "LLM Fine-tuning Architecture"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": 6001,
+      "type": "CONTAINS",
+      "startNodeId": 101,
+      "endNodeId": 301,
+      "properties": {
+        "access_floor": 1,
+        "id": 6001
+      }
+    },
+    {
+      "id": 6002,
+      "type": "CONTAINS",
+      "startNodeId": 101,
+      "endNodeId": 302,
+      "properties": {
+        "access_floor": 1,
+        "id": 6002
+      }
+    },
+    {
+      "id": 6003,
+      "type": "CONTAINS",
+      "startNodeId": 101,
+      "endNodeId": 303,
+      "properties": {
+        "access_floor": 1,
+        "id": 6003
+      }
+    },
+    {
+      "id": 6004,
+      "type": "CONTAINS",
+      "startNodeId": 101,
+      "endNodeId": 304,
+      "properties": {
+        "access_floor": 1,
+        "id": 6004
+      }
+    },
+    {
+      "id": 6005,
+      "type": "CONTAINS",
+      "startNodeId": 102,
+      "endNodeId": 305,
+      "properties": {
+        "access_floor": 1,
+        "id": 6005
+      }
+    },
+    {
+      "id": 6006,
+      "type": "CONTAINS",
+      "startNodeId": 102,
+      "endNodeId": 306,
+      "properties": {
+        "access_floor": 1,
+        "id": 6006
+      }
+    },
+    {
+      "id": 6007,
+      "type": "CONTAINS",
+      "startNodeId": 102,
+      "endNodeId": 307,
+      "properties": {
+        "access_floor": 1,
+        "id": 6007
+      }
+    },
+    {
+      "id": 6008,
+      "type": "CONTAINS",
+      "startNodeId": 102,
+      "endNodeId": 308,
+      "properties": {
+        "access_floor": 1,
+        "id": 6008
+      }
+    },
+    {
+      "id": 6009,
+      "type": "CONTAINS",
+      "startNodeId": 103,
+      "endNodeId": 309,
+      "properties": {
+        "access_floor": 1,
+        "id": 6009
+      }
+    },
+    {
+      "id": 6010,
+      "type": "CONTAINS",
+      "startNodeId": 103,
+      "endNodeId": 310,
+      "properties": {
+        "access_floor": 1,
+        "id": 6010
+      }
+    },
+    {
+      "id": 6011,
+      "type": "CONTAINS",
+      "startNodeId": 103,
+      "endNodeId": 311,
+      "properties": {
+        "access_floor": 1,
+        "id": 6011
+      }
+    },
+    {
+      "id": 6012,
+      "type": "CONTAINS",
+      "startNodeId": 104,
+      "endNodeId": 312,
+      "properties": {
+        "access_floor": 1,
+        "id": 6012
+      }
+    },
+    {
+      "id": 6013,
+      "type": "CONTAINS",
+      "startNodeId": 104,
+      "endNodeId": 313,
+      "properties": {
+        "access_floor": 1,
+        "id": 6013
+      }
+    },
+    {
+      "id": 6014,
+      "type": "CONTAINS",
+      "startNodeId": 104,
+      "endNodeId": 314,
+      "properties": {
+        "access_floor": 1,
+        "id": 6014
+      }
+    },
+    {
+      "id": 6015,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 301,
+      "endNodeId": 401,
+      "properties": {
+        "certified_av": true,
+        "id": 6015
+      }
+    },
+    {
+      "id": 6016,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 301,
+      "endNodeId": 402,
+      "properties": {
+        "certified_av": true,
+        "id": 6016
+      }
+    },
+    {
+      "id": 6017,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 301,
+      "endNodeId": 403,
+      "properties": {
+        "certified_av": true,
+        "id": 6017
+      }
+    },
+    {
+      "id": 6018,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 302,
+      "endNodeId": 404,
+      "properties": {
+        "certified_av": true,
+        "id": 6018
+      }
+    },
+    {
+      "id": 6019,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 302,
+      "endNodeId": 405,
+      "properties": {
+        "certified_av": true,
+        "id": 6019
+      }
+    },
+    {
+      "id": 6020,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 303,
+      "endNodeId": 406,
+      "properties": {
+        "certified_av": true,
+        "id": 6020
+      }
+    },
+    {
+      "id": 6021,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 303,
+      "endNodeId": 407,
+      "properties": {
+        "certified_av": true,
+        "id": 6021
+      }
+    },
+    {
+      "id": 6022,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 304,
+      "endNodeId": 408,
+      "properties": {
+        "certified_av": true,
+        "id": 6022
+      }
+    },
+    {
+      "id": 6023,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 305,
+      "endNodeId": 409,
+      "properties": {
+        "certified_av": true,
+        "id": 6023
+      }
+    },
+    {
+      "id": 6024,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 305,
+      "endNodeId": 410,
+      "properties": {
+        "certified_av": true,
+        "id": 6024
+      }
+    },
+    {
+      "id": 6025,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 306,
+      "endNodeId": 411,
+      "properties": {
+        "certified_av": true,
+        "id": 6025
+      }
+    },
+    {
+      "id": 6026,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 307,
+      "endNodeId": 412,
+      "properties": {
+        "certified_av": true,
+        "id": 6026
+      }
+    },
+    {
+      "id": 6027,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 308,
+      "endNodeId": 413,
+      "properties": {
+        "certified_av": true,
+        "id": 6027
+      }
+    },
+    {
+      "id": 6028,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 309,
+      "endNodeId": 414,
+      "properties": {
+        "certified_av": true,
+        "id": 6028
+      }
+    },
+    {
+      "id": 6029,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 309,
+      "endNodeId": 415,
+      "properties": {
+        "certified_av": true,
+        "id": 6029
+      }
+    },
+    {
+      "id": 6030,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 310,
+      "endNodeId": 416,
+      "properties": {
+        "certified_av": true,
+        "id": 6030
+      }
+    },
+    {
+      "id": 6031,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 311,
+      "endNodeId": 417,
+      "properties": {
+        "certified_av": true,
+        "id": 6031
+      }
+    },
+    {
+      "id": 6032,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 312,
+      "endNodeId": 418,
+      "properties": {
+        "certified_av": true,
+        "id": 6032
+      }
+    },
+    {
+      "id": 6033,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 313,
+      "endNodeId": 419,
+      "properties": {
+        "certified_av": true,
+        "id": 6033
+      }
+    },
+    {
+      "id": 6034,
+      "type": "EQUIPPED_WITH",
+      "startNodeId": 314,
+      "endNodeId": 420,
+      "properties": {
+        "certified_av": true,
+        "id": 6034
+      }
+    },
+    {
+      "id": 6035,
+      "type": "BELONGS_TO",
+      "startNodeId": 1001,
+      "endNodeId": 501,
+      "properties": {
+        "role": "Chief AI Scientist",
+        "since": "2025-01-15",
+        "id": 6035
+      }
+    },
+    {
+      "id": 6036,
+      "type": "BELONGS_TO",
+      "startNodeId": 1002,
+      "endNodeId": 501,
+      "properties": {
+        "role": "Senior NLP Research Lead",
+        "since": "2025-01-15",
+        "id": 6036
+      }
+    },
+    {
+      "id": 6037,
+      "type": "BELONGS_TO",
+      "startNodeId": 1003,
+      "endNodeId": 502,
+      "properties": {
+        "role": "VP Quantitative Trading",
+        "since": "2025-01-15",
+        "id": 6037
+      }
+    },
+    {
+      "id": 6038,
+      "type": "BELONGS_TO",
+      "startNodeId": 1004,
+      "endNodeId": 503,
+      "properties": {
+        "role": "Principal Cloud Architect",
+        "since": "2025-01-15",
+        "id": 6038
+      }
+    },
+    {
+      "id": 6039,
+      "type": "BELONGS_TO",
+      "startNodeId": 1005,
+      "endNodeId": 504,
+      "properties": {
+        "role": "Director of Bioinformatics",
+        "since": "2025-01-15",
+        "id": 6039
+      }
+    },
+    {
+      "id": 6040,
+      "type": "BELONGS_TO",
+      "startNodeId": 1006,
+      "endNodeId": 505,
+      "properties": {
+        "role": "Lead Flight Telemetry Engineer",
+        "since": "2025-01-15",
+        "id": 6040
+      }
+    },
+    {
+      "id": 6041,
+      "type": "BELONGS_TO",
+      "startNodeId": 1007,
+      "endNodeId": 502,
+      "properties": {
+        "role": "Risk Management Specialist",
+        "since": "2025-01-15",
+        "id": 6041
+      }
+    },
+    {
+      "id": 6042,
+      "type": "BELONGS_TO",
+      "startNodeId": 1008,
+      "endNodeId": 501,
+      "properties": {
+        "role": "Deep Learning Associate",
+        "since": "2025-01-15",
+        "id": 6042
+      }
+    },
+    {
+      "id": 6043,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1001,
+      "endNodeId": 202,
+      "properties": {
+        "auto_renew": true,
+        "id": 6043
+      }
+    },
+    {
+      "id": 6044,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1002,
+      "endNodeId": 203,
+      "properties": {
+        "auto_renew": true,
+        "id": 6044
+      }
+    },
+    {
+      "id": 6045,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1003,
+      "endNodeId": 204,
+      "properties": {
+        "auto_renew": true,
+        "id": 6045
+      }
+    },
+    {
+      "id": 6046,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1004,
+      "endNodeId": 201,
+      "properties": {
+        "auto_renew": true,
+        "id": 6046
+      }
+    },
+    {
+      "id": 6047,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1005,
+      "endNodeId": 203,
+      "properties": {
+        "auto_renew": true,
+        "id": 6047
+      }
+    },
+    {
+      "id": 6048,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1006,
+      "endNodeId": 204,
+      "properties": {
+        "auto_renew": true,
+        "id": 6048
+      }
+    },
+    {
+      "id": 6049,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1007,
+      "endNodeId": 202,
+      "properties": {
+        "auto_renew": true,
+        "id": 6049
+      }
+    },
+    {
+      "id": 6050,
+      "type": "SUBSCRIBED_TO",
+      "startNodeId": 1008,
+      "endNodeId": 201,
+      "properties": {
+        "auto_renew": true,
+        "id": 6050
+      }
+    },
+    {
+      "id": 6051,
+      "type": "BOOKED",
+      "startNodeId": 1001,
+      "endNodeId": 5001,
+      "properties": {
+        "channel": "Web App",
+        "id": 6051
+      }
+    },
+    {
+      "id": 6052,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5001,
+      "endNodeId": 301,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6052
+      }
+    },
+    {
+      "id": 6053,
+      "type": "BILLED_TO",
+      "startNodeId": 5001,
+      "endNodeId": 501,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6053
+      }
+    },
+    {
+      "id": 6054,
+      "type": "BOOKED",
+      "startNodeId": 1003,
+      "endNodeId": 5002,
+      "properties": {
+        "channel": "Web App",
+        "id": 6054
+      }
+    },
+    {
+      "id": 6055,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5002,
+      "endNodeId": 301,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6055
+      }
+    },
+    {
+      "id": 6056,
+      "type": "BILLED_TO",
+      "startNodeId": 5002,
+      "endNodeId": 502,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6056
+      }
+    },
+    {
+      "id": 6057,
+      "type": "BOOKED",
+      "startNodeId": 1002,
+      "endNodeId": 5003,
+      "properties": {
+        "channel": "Web App",
+        "id": 6057
+      }
+    },
+    {
+      "id": 6058,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5003,
+      "endNodeId": 302,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6058
+      }
+    },
+    {
+      "id": 6059,
+      "type": "BILLED_TO",
+      "startNodeId": 5003,
+      "endNodeId": 501,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6059
+      }
+    },
+    {
+      "id": 6060,
+      "type": "BOOKED",
+      "startNodeId": 1004,
+      "endNodeId": 5004,
+      "properties": {
+        "channel": "Web App",
+        "id": 6060
+      }
+    },
+    {
+      "id": 6061,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5004,
+      "endNodeId": 302,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6061
+      }
+    },
+    {
+      "id": 6062,
+      "type": "BILLED_TO",
+      "startNodeId": 5004,
+      "endNodeId": 503,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6062
+      }
+    },
+    {
+      "id": 6063,
+      "type": "BOOKED",
+      "startNodeId": 1006,
+      "endNodeId": 5005,
+      "properties": {
+        "channel": "Web App",
+        "id": 6063
+      }
+    },
+    {
+      "id": 6064,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5005,
+      "endNodeId": 303,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6064
+      }
+    },
+    {
+      "id": 6065,
+      "type": "BILLED_TO",
+      "startNodeId": 5005,
+      "endNodeId": 505,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6065
+      }
+    },
+    {
+      "id": 6066,
+      "type": "BOOKED",
+      "startNodeId": 1003,
+      "endNodeId": 5006,
+      "properties": {
+        "channel": "Web App",
+        "id": 6066
+      }
+    },
+    {
+      "id": 6067,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5006,
+      "endNodeId": 305,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6067
+      }
+    },
+    {
+      "id": 6068,
+      "type": "BILLED_TO",
+      "startNodeId": 5006,
+      "endNodeId": 502,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6068
+      }
+    },
+    {
+      "id": 6069,
+      "type": "BOOKED",
+      "startNodeId": 1007,
+      "endNodeId": 5007,
+      "properties": {
+        "channel": "Web App",
+        "id": 6069
+      }
+    },
+    {
+      "id": 6070,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5007,
+      "endNodeId": 306,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6070
+      }
+    },
+    {
+      "id": 6071,
+      "type": "BILLED_TO",
+      "startNodeId": 5007,
+      "endNodeId": 502,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6071
+      }
+    },
+    {
+      "id": 6072,
+      "type": "BOOKED",
+      "startNodeId": 1005,
+      "endNodeId": 5008,
+      "properties": {
+        "channel": "Web App",
+        "id": 6072
+      }
+    },
+    {
+      "id": 6073,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5008,
+      "endNodeId": 309,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6073
+      }
+    },
+    {
+      "id": 6074,
+      "type": "BILLED_TO",
+      "startNodeId": 5008,
+      "endNodeId": 504,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6074
+      }
+    },
+    {
+      "id": 6075,
+      "type": "BOOKED",
+      "startNodeId": 1008,
+      "endNodeId": 5009,
+      "properties": {
+        "channel": "Web App",
+        "id": 6075
+      }
+    },
+    {
+      "id": 6076,
+      "type": "RESERVED_FOR",
+      "startNodeId": 5009,
+      "endNodeId": 312,
+      "properties": {
+        "slot": "Confirmed",
+        "id": 6076
+      }
+    },
+    {
+      "id": 6077,
+      "type": "BILLED_TO",
+      "startNodeId": 5009,
+      "endNodeId": 501,
+      "properties": {
+        "payment_status": "PAID",
+        "id": 6077
+      }
+    },
+    {
+      "id": 6078,
+      "type": "REPORTS_TO",
+      "startNodeId": 9002,
+      "endNodeId": 9001,
+      "properties": {
+        "department": "Hub Operations",
+        "id": 6078
+      }
+    },
+    {
+      "id": 6079,
+      "type": "REPORTS_TO",
+      "startNodeId": 9003,
+      "endNodeId": 9001,
+      "properties": {
+        "department": "Hub Operations",
+        "id": 6079
+      }
+    },
+    {
+      "id": 6080,
+      "type": "REPORTS_TO",
+      "startNodeId": 9004,
+      "endNodeId": 9001,
+      "properties": {
+        "department": "IT Infrastructure",
+        "id": 6080
+      }
+    },
+    {
+      "id": 6081,
+      "type": "REPORTS_TO",
+      "startNodeId": 9006,
+      "endNodeId": 9001,
+      "properties": {
+        "department": "Hub Operations",
+        "id": 6081
+      }
+    },
+    {
+      "id": 6082,
+      "type": "REPORTS_TO",
+      "startNodeId": 9005,
+      "endNodeId": 9002,
+      "properties": {
+        "department": "Hospitality",
+        "id": 6082
+      }
+    },
+    {
+      "id": 6083,
+      "type": "MANAGES",
+      "startNodeId": 9002,
+      "endNodeId": 101,
+      "properties": {
+        "shift": "Day Shift",
+        "id": 6083
+      }
+    },
+    {
+      "id": 6084,
+      "type": "MANAGES",
+      "startNodeId": 9003,
+      "endNodeId": 102,
+      "properties": {
+        "shift": "Day Shift",
+        "id": 6084
+      }
+    },
+    {
+      "id": 6085,
+      "type": "MANAGES",
+      "startNodeId": 9006,
+      "endNodeId": 104,
+      "properties": {
+        "shift": "Day Shift",
+        "id": 6085
+      }
+    },
+    {
+      "id": 6086,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1001,
+      "endNodeId": 1002,
+      "properties": {
+        "shared_sessions": 12,
+        "id": 6086
+      }
+    },
+    {
+      "id": 6087,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1002,
+      "endNodeId": 1001,
+      "properties": {
+        "shared_sessions": 12,
+        "id": 6087
+      }
+    },
+    {
+      "id": 6088,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1001,
+      "endNodeId": 1008,
+      "properties": {
+        "shared_sessions": 5,
+        "id": 6088
+      }
+    },
+    {
+      "id": 6089,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1008,
+      "endNodeId": 1001,
+      "properties": {
+        "shared_sessions": 5,
+        "id": 6089
+      }
+    },
+    {
+      "id": 6090,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1003,
+      "endNodeId": 1007,
+      "properties": {
+        "shared_sessions": 18,
+        "id": 6090
+      }
+    },
+    {
+      "id": 6091,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1007,
+      "endNodeId": 1003,
+      "properties": {
+        "shared_sessions": 18,
+        "id": 6091
+      }
+    },
+    {
+      "id": 6092,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1002,
+      "endNodeId": 1006,
+      "properties": {
+        "shared_sessions": 4,
+        "id": 6092
+      }
+    },
+    {
+      "id": 6093,
+      "type": "COLLABORATED_WITH",
+      "startNodeId": 1006,
+      "endNodeId": 1002,
+      "properties": {
+        "shared_sessions": 4,
+        "id": 6093
+      }
+    }
+  ]
+}
